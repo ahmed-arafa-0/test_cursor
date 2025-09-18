@@ -1,0 +1,24 @@
+- Title
+- Counter
+- Quotes
+-- Signature : MrDeHaviland
+
+EN
+- Pacifico
+- Limelight
+- Story_Script
+
+AR
+- Aref_Ruqaa
+- Rakkas
+- Playpen Sans Arabic
+
+IT
+- Grand Hotel
+- Shrikhand
+- Parisienne
+
+GR
+- Playpen Sans
+- Sofia Sans Extra Condensed
+- Mansalva

@@ -5,10 +5,10 @@ sealed class LanguageState {}
 
 final class LanguageInitial extends LanguageState {}
 
-final class EnglishLanguageInitial extends LanguageState {}
+final class EnglishLanguageState extends LanguageState {}
 
-final class ArabicLanguageInitial extends LanguageState {}
+final class ArabicLanguageState extends LanguageState {}
 
-final class ItalianLanguageInitial extends LanguageState {}
+final class ItalianLanguageState extends LanguageState {}
 
-final class GreekLanguageInitial extends LanguageState {}
+final class GreekLanguageState extends LanguageState {}

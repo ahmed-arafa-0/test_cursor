@@ -139,7 +139,7 @@ class _EnhancedLanguageSwitchState extends State<EnhancedLanguageSwitch>
                   },
                   child: Center(
                     child: Text(
-                      languageCubit.getLanguageFlag(),
+                      languageCubit.getLanguageFlag('English'),
                       style: const TextStyle(fontSize: 20),
                     ),
                   ),

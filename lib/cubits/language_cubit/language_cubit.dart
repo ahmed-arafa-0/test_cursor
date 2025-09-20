@@ -1,3 +1,4 @@
+// lib/cubits/language_cubit/language_cubit.dart
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 
@@ -10,8 +11,31 @@ class LanguageCubit extends Cubit<LanguageState> {
 
   String get currentLanguage => _currentLanguage;
 
+  // Language flags mapping
+  final Map<String, String> languageFlags = {
+    'English': '🇺🇸',
+    'Arabic': '🇸🇦',
+    'Italian': '🇮🇹',
+    'Greek': '🇬🇷',
+  };
+
+  final List<String> availableLanguages = [
+    'English',
+    'Arabic',
+    'Italian',
+    'Greek',
+  ];
+
+  // Fixed method name to match your existing code
+  String getLanguageFlag(String language) {
+    return languageFlags[language] ?? '🇺🇸';
+  }
+
   void changeLanguage(String language) {
+    if (!availableLanguages.contains(language)) return;
+
     _currentLanguage = language;
+
     switch (language) {
       case 'English':
         emit(EnglishLanguageState());
@@ -25,42 +49,12 @@ class LanguageCubit extends Cubit<LanguageState> {
       case 'Greek':
         emit(GreekLanguageState());
         break;
-      default:
-        emit(EnglishLanguageState());
     }
   }
 
-  void toggleLanguage() {
-    switch (_currentLanguage) {
-      case 'English':
-        changeLanguage('Arabic');
-        break;
-      case 'Arabic':
-        changeLanguage('Italian');
-        break;
-      case 'Italian':
-        changeLanguage('Greek');
-        break;
-      case 'Greek':
-        changeLanguage('English');
-        break;
-      default:
-        changeLanguage('English');
-    }
-  }
-
-  String getLanguageFlag() {
-    switch (_currentLanguage) {
-      case 'English':
-        return '🇺🇸';
-      case 'Arabic':
-        return '🇸🇦';
-      case 'Italian':
-        return '🇮🇹';
-      case 'Greek':
-        return '🇬🇷';
-      default:
-        return '🇺🇸';
-    }
+  void nextLanguage() {
+    final currentIndex = availableLanguages.indexOf(_currentLanguage);
+    final nextIndex = (currentIndex + 1) % availableLanguages.length;
+    changeLanguage(availableLanguages[nextIndex]);
   }
 }

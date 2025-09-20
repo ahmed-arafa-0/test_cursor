@@ -1,9 +1,8 @@
+// lib/cubits/language_cubit/language_state.dart
 part of 'language_cubit.dart';
 
 @immutable
 sealed class LanguageState {}
-
-final class LanguageInitial extends LanguageState {}
 
 final class EnglishLanguageState extends LanguageState {}
 

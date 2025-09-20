@@ -1,31 +1,20 @@
+// lib/cubits/background_cubit/background_state.dart
 part of 'background_cubit.dart';
 
 @immutable
 sealed class BackgroundCubitState {}
 
-final class PictureBackgroundAssetState extends BackgroundCubitState {
-  final String assetPath;
-  PictureBackgroundAssetState({required this.assetPath});
-}
+final class PictureBackgroundAssetState extends BackgroundCubitState {}
 
-final class PictureBackgroundNetworkState extends BackgroundCubitState {
-  final String networkUrl;
-  PictureBackgroundNetworkState({required this.networkUrl});
-}
+final class PictureBackgroundNetworkState extends BackgroundCubitState {}
 
-final class VideoBackgroundAssetState extends BackgroundCubitState {
-  final String assetPath;
-  VideoBackgroundAssetState({required this.assetPath});
-}
+final class VideoBackgroundAssetState extends BackgroundCubitState {}
 
-final class VideoBackgroundNetworkState extends BackgroundCubitState {
-  final String networkUrl;
-  VideoBackgroundNetworkState({required this.networkUrl});
-}
+final class VideoBackgroundNetworkState extends BackgroundCubitState {}
 
 final class BackgroundLoadingState extends BackgroundCubitState {}
 
 final class BackgroundErrorState extends BackgroundCubitState {
   final String message;
-  BackgroundErrorState({required this.message});
+  BackgroundErrorState(this.message);
 }

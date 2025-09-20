@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import '../../cubits/language_cubit/language_cubit.dart';
+import '../../languages/app_language.dart';
 import '../../cubits/countdown_cubit/countdown_cubit.dart';
 import '../../cubits/language_cubit/language_cubit.dart';
 import '../../cubits/content_cubit/content_cubit.dart';
 import '../../utils/font_manager.dart';
-import '../../languages/app_language.dart';
+// import '../../languages/app_language.dart';
 
 class CompleteCounterWidget extends StatefulWidget {
   const CompleteCounterWidget({super.key});
@@ -66,33 +66,44 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     return BlocBuilder<LanguageCubit, LanguageState>(
       builder: (context, languageState) {
         final language = context.read<LanguageCubit>().currentLanguage;
+        final isRTL = FontManager.isRTL(language);
 
-        return BlocBuilder<CountdownCubit, CountdownState>(
-          builder: (context, countdownState) {
-            // Handle different countdown states
-            if (countdownState is CountdownFinished) {
-              return _buildBirthdayMessage(language, screenWidth);
-            } else if (countdownState is CountdownFinalSeconds) {
-              _startPulseAnimation();
-              return _buildFinalCountdown(
-                countdownState,
-                language,
-                screenWidth,
-              );
-            } else if (countdownState is CountdownTicking) {
-              _stopPulseAnimation();
-              return _buildMainCounter(
-                countdownState,
-                language,
-                screenWidth,
-                isLandscape,
-              );
-            } else if (countdownState is CountdownError) {
-              return _buildErrorState(countdownState, language, screenWidth);
-            } else {
-              return _buildLoadingState(language, screenWidth);
-            }
-          },
+        return Directionality(
+          textDirection: FontManager.getTextDirection(language),
+          child: BlocBuilder<CountdownCubit, CountdownState>(
+            builder: (context, countdownState) {
+              // Handle different countdown states
+              if (countdownState is CountdownFinished) {
+                return _buildBirthdayMessage(language, screenWidth, isRTL);
+              } else if (countdownState is CountdownFinalSeconds) {
+                _startPulseAnimation();
+                return _buildFinalCountdown(
+                  countdownState,
+                  language,
+                  screenWidth,
+                  isRTL,
+                );
+              } else if (countdownState is CountdownTicking) {
+                _stopPulseAnimation();
+                return _buildMainCounter(
+                  countdownState,
+                  language,
+                  screenWidth,
+                  isLandscape,
+                  isRTL,
+                );
+              } else if (countdownState is CountdownError) {
+                return _buildErrorState(
+                  countdownState,
+                  language,
+                  screenWidth,
+                  isRTL,
+                );
+              } else {
+                return _buildLoadingState(language, screenWidth, isRTL);
+              }
+            },
+          ),
         );
       },
     );
@@ -103,6 +114,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     String language,
     double screenWidth,
     bool isLandscape,
+    bool isRTL,
   ) {
     return Container(
       constraints: BoxConstraints(
@@ -131,33 +143,39 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
         mainAxisSize: MainAxisSize.min,
         children: [
           // Title
-          _buildTitle(language, screenWidth),
+          _buildTitle(language, screenWidth, isRTL),
 
           SizedBox(height: screenWidth < 400 ? 20 : 30),
 
           // Main Counter Display
-          _buildCounterDisplay(state, language, screenWidth, isLandscape),
+          _buildCounterDisplay(
+            state,
+            language,
+            screenWidth,
+            isLandscape,
+            isRTL,
+          ),
 
           SizedBox(height: screenWidth < 400 ? 20 : 30),
 
           // Quote
-          _buildQuote(language, screenWidth),
+          _buildQuote(language, screenWidth, isRTL),
 
           SizedBox(height: screenWidth < 400 ? 16 : 20),
 
           // Signature
-          _buildSignature(screenWidth),
+          _buildSignature(screenWidth, isRTL),
 
           SizedBox(height: screenWidth < 400 ? 8 : 12),
 
-          // Cairo Time Info
-          _buildTimeInfo(state, language, screenWidth),
+          // Cairo Time Info (FIXED)
+          _buildTimeInfo(state, language, screenWidth, isRTL),
         ],
       ),
     );
   }
 
-  Widget _buildTitle(String language, double screenWidth) {
+  Widget _buildTitle(String language, double screenWidth, bool isRTL) {
     final fontSize = FontManager.getResponsiveFontSize(
       screenWidth: screenWidth,
       baseFontSize: 22,
@@ -181,15 +199,13 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
         break;
     }
 
-    return Directionality(
-      textDirection: FontManager.getTextDirection(language),
-      child: Text(
-        title,
-        style: FontManager.applyWebOptimizations(titleStyle),
-        textAlign: TextAlign.center,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+    return Text(
+      title,
+      style: FontManager.applyWebOptimizations(titleStyle),
+      textAlign: TextAlign.center,
+      textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -198,13 +214,14 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     String language,
     double screenWidth,
     bool isLandscape,
+    bool isRTL,
   ) {
     if (screenWidth < 400) {
-      return _buildCompactCounterGrid(state, language, screenWidth);
+      return _buildCompactCounterGrid(state, language, screenWidth, isRTL);
     } else if (isLandscape && screenWidth > 800) {
-      return _buildWideCounterRow(state, language, screenWidth);
+      return _buildWideCounterRow(state, language, screenWidth, isRTL);
     } else {
-      return _buildStandardCounterWrap(state, language, screenWidth);
+      return _buildStandardCounterWrap(state, language, screenWidth, isRTL);
     }
   }
 
@@ -212,47 +229,56 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownTicking state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
+    // For RTL, we maintain the logical order but the layout will be mirrored
+    final counterUnits = [
+      _buildCounterUnit(
+        state.days,
+        _getTimeLabel('days', language),
+        language,
+        screenWidth,
+        true,
+        isRTL,
+      ),
+      _buildCounterUnit(
+        state.hours,
+        _getTimeLabel('hours', language),
+        language,
+        screenWidth,
+        true,
+        isRTL,
+      ),
+      _buildCounterUnit(
+        state.minutes,
+        _getTimeLabel('minutes', language),
+        language,
+        screenWidth,
+        true,
+        isRTL,
+      ),
+      _buildCounterUnit(
+        state.seconds,
+        _getTimeLabel('seconds', language),
+        language,
+        screenWidth,
+        true,
+        isRTL,
+      ),
+    ];
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildCounterUnit(
-              state.days,
-              _getTimeLabel('days', language),
-              language,
-              screenWidth,
-              true,
-            ),
-            _buildCounterUnit(
-              state.hours,
-              _getTimeLabel('hours', language),
-              language,
-              screenWidth,
-              true,
-            ),
-          ],
+          textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+          children: [counterUnits[0], counterUnits[1]],
         ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _buildCounterUnit(
-              state.minutes,
-              _getTimeLabel('minutes', language),
-              language,
-              screenWidth,
-              true,
-            ),
-            _buildCounterUnit(
-              state.seconds,
-              _getTimeLabel('seconds', language),
-              language,
-              screenWidth,
-              true,
-            ),
-          ],
+          textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+          children: [counterUnits[2], counterUnits[3]],
         ),
       ],
     );
@@ -262,42 +288,50 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownTicking state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
+    final counterUnits = [
+      _buildCounterUnit(
+        state.days,
+        _getTimeLabel('days', language),
+        language,
+        screenWidth,
+        false,
+        isRTL,
+      ),
+      _buildCounterSeparator(),
+      _buildCounterUnit(
+        state.hours,
+        _getTimeLabel('hours', language),
+        language,
+        screenWidth,
+        false,
+        isRTL,
+      ),
+      _buildCounterSeparator(),
+      _buildCounterUnit(
+        state.minutes,
+        _getTimeLabel('minutes', language),
+        language,
+        screenWidth,
+        false,
+        isRTL,
+      ),
+      _buildCounterSeparator(),
+      _buildCounterUnit(
+        state.seconds,
+        _getTimeLabel('seconds', language),
+        language,
+        screenWidth,
+        false,
+        isRTL,
+      ),
+    ];
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildCounterUnit(
-          state.days,
-          _getTimeLabel('days', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterSeparator(),
-        _buildCounterUnit(
-          state.hours,
-          _getTimeLabel('hours', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterSeparator(),
-        _buildCounterUnit(
-          state.minutes,
-          _getTimeLabel('minutes', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterSeparator(),
-        _buildCounterUnit(
-          state.seconds,
-          _getTimeLabel('seconds', language),
-          language,
-          screenWidth,
-          false,
-        ),
-      ],
+      textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+      children: counterUnits,
     );
   }
 
@@ -305,41 +339,50 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownTicking state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
-    return Wrap(
-      alignment: WrapAlignment.spaceEvenly,
-      spacing: screenWidth < 600 ? 16 : 24,
-      runSpacing: 20,
-      children: [
-        _buildCounterUnit(
-          state.days,
-          _getTimeLabel('days', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterUnit(
-          state.hours,
-          _getTimeLabel('hours', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterUnit(
-          state.minutes,
-          _getTimeLabel('minutes', language),
-          language,
-          screenWidth,
-          false,
-        ),
-        _buildCounterUnit(
-          state.seconds,
-          _getTimeLabel('seconds', language),
-          language,
-          screenWidth,
-          false,
-        ),
-      ],
+    return Directionality(
+      textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+      child: Wrap(
+        alignment: WrapAlignment.spaceEvenly,
+        spacing: screenWidth < 600 ? 16 : 24,
+        runSpacing: 20,
+        textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+        children: [
+          _buildCounterUnit(
+            state.days,
+            _getTimeLabel('days', language),
+            language,
+            screenWidth,
+            false,
+            isRTL,
+          ),
+          _buildCounterUnit(
+            state.hours,
+            _getTimeLabel('hours', language),
+            language,
+            screenWidth,
+            false,
+            isRTL,
+          ),
+          _buildCounterUnit(
+            state.minutes,
+            _getTimeLabel('minutes', language),
+            language,
+            screenWidth,
+            false,
+            isRTL,
+          ),
+          _buildCounterUnit(
+            state.seconds,
+            _getTimeLabel('seconds', language),
+            language,
+            screenWidth,
+            false,
+            isRTL,
+          ),
+        ],
+      ),
     );
   }
 
@@ -349,6 +392,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     String language,
     double screenWidth,
     bool compact,
+    bool isRTL,
   ) {
     final numberFontSize = FontManager.getResponsiveFontSize(
       screenWidth: screenWidth,
@@ -397,26 +441,27 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
                         fontSize: numberFontSize,
                       ),
                     ),
+                    textDirection: isRTL
+                        ? TextDirection.rtl
+                        : TextDirection.ltr,
                   ),
                 ),
 
                 const SizedBox(height: 4),
 
                 // Label
-                Directionality(
-                  textDirection: FontManager.getTextDirection(language),
-                  child: Text(
-                    label,
-                    style: FontManager.applyWebOptimizations(
-                      FontManager.getCounterLabelStyle(
-                        language: language,
-                        fontSize: labelFontSize,
-                      ),
+                Text(
+                  label,
+                  style: FontManager.applyWebOptimizations(
+                    FontManager.getCounterLabelStyle(
+                      language: language,
+                      fontSize: labelFontSize,
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
+                  textAlign: TextAlign.center,
+                  textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -437,7 +482,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     );
   }
 
-  Widget _buildQuote(String language, double screenWidth) {
+  Widget _buildQuote(String language, double screenWidth, bool isRTL) {
     final fontSize = FontManager.getResponsiveFontSize(
       screenWidth: screenWidth,
       baseFontSize: 18,
@@ -467,37 +512,29 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
           }
         }
 
-        return Directionality(
-          textDirection: FontManager.getTextDirection(language),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+          ),
+          child: Text(
+            quote,
+            style: FontManager.applyWebOptimizations(
+              FontManager.getQuoteStyle(language: language, fontSize: fontSize),
             ),
-            child: Text(
-              quote,
-              style: FontManager.applyWebOptimizations(
-                FontManager.getQuoteStyle(
-                  language: language,
-                  fontSize: fontSize,
-                ),
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            textAlign: TextAlign.center,
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
           ),
         );
       },
     );
   }
 
-  Widget _buildSignature(double screenWidth) {
+  Widget _buildSignature(double screenWidth, bool isRTL) {
     final fontSize = FontManager.getResponsiveFontSize(
       screenWidth: screenWidth,
       baseFontSize: 16,
@@ -505,7 +542,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     );
 
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: isRTL ? Alignment.centerLeft : Alignment.centerRight,
       child: Text(
         '♈ AR',
         style: FontManager.applyWebOptimizations(
@@ -519,6 +556,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownTicking state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
     final fontSize = FontManager.getResponsiveFontSize(
       screenWidth: screenWidth,
@@ -534,16 +572,18 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
         children: [
           Icon(Icons.schedule, color: Colors.white60, size: fontSize + 2),
           const SizedBox(width: 6),
           Text(
-            'Cairo Time: ${state.cairoTime.hour.toString().padLeft(2, '0')}:${state.cairoTime.minute.toString().padLeft(2, '0')}',
+            'Cairo Time: ${state.cairoTimeFormatted}', // Using the formatted time from state
             style: TextStyle(
               color: Colors.white60,
               fontSize: fontSize,
               fontFamily: 'monospace',
             ),
+            textDirection: TextDirection.ltr, // Always LTR for time display
           ),
         ],
       ),
@@ -554,6 +594,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownFinalSeconds state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
     return AnimatedBuilder(
       animation: _pulseAnimation,
@@ -578,6 +619,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
                     color: Colors.red,
                   ),
                   textAlign: TextAlign.center,
+                  textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
                 ),
                 const SizedBox(height: 20),
                 Text(
@@ -596,7 +638,11 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     );
   }
 
-  Widget _buildBirthdayMessage(String language, double screenWidth) {
+  Widget _buildBirthdayMessage(
+    String language,
+    double screenWidth,
+    bool isRTL,
+  ) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
@@ -621,6 +667,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
           ),
           const SizedBox(height: 16),
           Text(
@@ -631,6 +678,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
           ),
         ],
       ),
@@ -641,6 +689,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
     CountdownError state,
     String language,
     double screenWidth,
+    bool isRTL,
   ) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -661,19 +710,21 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
               fontSize: 18,
               color: Colors.red,
             ),
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
           ),
           const SizedBox(height: 8),
           Text(
             state.message,
             style: TextStyle(color: Colors.white70),
             textAlign: TextAlign.center,
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildLoadingState(String language, double screenWidth) {
+  Widget _buildLoadingState(String language, double screenWidth, bool isRTL) {
     return Container(
       padding: const EdgeInsets.all(40),
       child: Column(
@@ -684,6 +735,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
           Text(
             'Preparing countdown...',
             style: FontManager.getTitleStyle(language: language, fontSize: 16),
+            textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
           ),
         ],
       ),

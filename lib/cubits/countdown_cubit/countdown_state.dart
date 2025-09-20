@@ -13,6 +13,7 @@ final class CountdownTicking extends CountdownState {
   final Duration totalDuration;
   final DateTime cairoTime;
   final DateTime targetTime;
+  final String cairoTimeFormatted;
 
   CountdownTicking({
     required this.days,
@@ -22,6 +23,7 @@ final class CountdownTicking extends CountdownState {
     required this.totalDuration,
     required this.cairoTime,
     required this.targetTime,
+    required this.cairoTimeFormatted,
   });
 
   /// Get formatted countdown string

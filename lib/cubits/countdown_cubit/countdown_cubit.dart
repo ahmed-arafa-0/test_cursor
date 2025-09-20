@@ -14,21 +14,41 @@ class CountdownCubit extends Cubit<CountdownState> {
   late DateTime _targetDate;
   Timer? _timer;
 
-  // Cairo, Egypt timezone offset (+2 hours)
-  static const Duration _cairoOffset = Duration(hours: 2);
-
   DateTime get targetDate => _targetDate;
 
   void _setTargetDate(DateTime? targetDate) {
     if (targetDate != null) {
-      _targetDate = targetDate;
+      // Set target date to midnight Cairo time on the birthday
+      _targetDate = DateTime(
+        targetDate.year,
+        targetDate.month,
+        targetDate.day,
+        0,
+        0,
+        0,
+      );
     } else {
-      // Default: Veuolla's birthday September 26, 2025 in Cairo timezone
-      final now = DateTime.now().toUtc().add(_cairoOffset);
-      _targetDate = DateTime(2025, 9, 26, 0, 0, 0); // Midnight on birthday
+      // Default: Veuolla's birthday September 26, 2025 at midnight Cairo time
+      _targetDate = DateTime(2025, 9, 26, 0, 0, 0);
     }
 
     log('Target date set to: $_targetDate (Cairo time)');
+  }
+
+  /// Get current time in Cairo timezone (UTC+2)
+  DateTime _getCairoTime() {
+    final utcNow = DateTime.now().toUtc();
+    return utcNow.add(const Duration(hours: 2));
+  }
+
+  /// Convert Cairo time to proper display format
+  String _formatCairoTime(DateTime cairoTime) {
+    final hour = cairoTime.hour;
+    final minute = cairoTime.minute;
+    final period = hour >= 12 ? 'PM' : 'AM';
+    final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+
+    return '${displayHour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} $period';
   }
 
   void _initializeCountdown() {
@@ -46,12 +66,27 @@ class CountdownCubit extends Cubit<CountdownState> {
 
   void _updateCountdown() {
     try {
-      // Get current time in Cairo timezone
-      final nowUtc = DateTime.now().toUtc();
-      final nowCairo = nowUtc.add(_cairoOffset);
+      // Get current Cairo time
+      final nowCairo = _getCairoTime();
+
+      // Create target date in Cairo timezone
+      final targetCairo = DateTime(
+        _targetDate.year,
+        _targetDate.month,
+        _targetDate.day,
+        0,
+        0,
+        0, // Midnight on birthday
+      );
 
       // Calculate difference
-      final difference = _targetDate.difference(nowCairo);
+      final difference = targetCairo.difference(nowCairo);
+
+      log('Current Cairo time: $nowCairo');
+      log('Target Cairo time: $targetCairo');
+      log(
+        'Difference: ${difference.inDays} days, ${difference.inHours % 24} hours',
+      );
 
       if (difference.isNegative) {
         // Birthday has passed
@@ -85,7 +120,8 @@ class CountdownCubit extends Cubit<CountdownState> {
             seconds: seconds,
             totalDuration: difference,
             cairoTime: nowCairo,
-            targetTime: _targetDate,
+            targetTime: targetCairo,
+            cairoTimeFormatted: _formatCairoTime(nowCairo),
           ),
         );
 
@@ -103,7 +139,7 @@ class CountdownCubit extends Cubit<CountdownState> {
   /// Set new target date
   void setTargetDate(DateTime newDate) {
     log('Changing target date from $_targetDate to $newDate');
-    _targetDate = newDate;
+    _setTargetDate(newDate);
     _updateCountdown();
   }
 
@@ -128,9 +164,7 @@ class CountdownCubit extends Cubit<CountdownState> {
 
   /// Check if birthday is today
   bool get isBirthdayToday {
-    final nowUtc = DateTime.now().toUtc();
-    final nowCairo = nowUtc.add(_cairoOffset);
-
+    final nowCairo = _getCairoTime();
     return nowCairo.year == _targetDate.year &&
         nowCairo.month == _targetDate.month &&
         nowCairo.day == _targetDate.day;
@@ -145,7 +179,12 @@ class CountdownCubit extends Cubit<CountdownState> {
 
   /// Get current Cairo time
   DateTime getCurrentCairoTime() {
-    return DateTime.now().toUtc().add(_cairoOffset);
+    return _getCairoTime();
+  }
+
+  /// Get formatted Cairo time string
+  String getFormattedCairoTime() {
+    return _formatCairoTime(_getCairoTime());
   }
 
   /// Pause countdown (for testing)

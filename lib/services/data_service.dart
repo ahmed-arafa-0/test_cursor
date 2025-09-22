@@ -88,7 +88,7 @@ class DataService {
     }
   }
 
-  /// Get daily content for a specific date
+  /// Get daily content for a specific date - FIXED to load ALL rows for today
   static Future<DailyContent> getDailyContent([DateTime? targetDate]) async {
     try {
       final date = targetDate ?? DateTime.now();
@@ -109,7 +109,7 @@ class DataService {
       final picturesData = results[2];
       final videosData = results[3];
 
-      // Filter data for the specific date
+      // FIXED: Filter ALL rows for the specific date (not just first one)
       final todayQuotes = quotesData
           .where((row) => row['Date'] == dateString)
           .toList();
@@ -123,17 +123,26 @@ class DataService {
           .where((row) => row['Date'] == dateString)
           .toList();
 
-      // Parse quotes
-      Quote quote = Quote.getDefault();
-      if (todayQuotes.isNotEmpty) {
+      log(
+        'Found for $dateString: ${todayQuotes.length} quotes, ${todayMusic.length} music, ${todayPictures.length} pictures, ${todayVideos.length} videos',
+      );
+
+      // Parse ALL quotes for today (not just first one)
+      List<Quote> quotes = [];
+      for (final row in todayQuotes) {
         try {
-          quote = Quote.fromGoogleSheet(todayQuotes.first);
+          quotes.add(Quote.fromGoogleSheet(row));
         } catch (e) {
           log('Error parsing quote: $e');
         }
       }
 
-      // Parse music
+      // If no quotes for today, use default
+      if (quotes.isEmpty) {
+        quotes.add(Quote.getDefault());
+      }
+
+      // Parse ALL music for today
       List<Music> musicList = [];
       for (final row in todayMusic) {
         try {
@@ -146,7 +155,7 @@ class DataService {
         musicList.add(Music.getDefault());
       }
 
-      // Parse pictures
+      // Parse ALL pictures for today
       List<Picture> pictureList = [];
       for (final row in todayPictures) {
         try {
@@ -159,7 +168,7 @@ class DataService {
         pictureList.add(Picture.getDefault());
       }
 
-      // Parse videos
+      // Parse ALL videos for today
       List<VideoAsset> videoList = [];
       for (final row in todayVideos) {
         try {
@@ -172,16 +181,17 @@ class DataService {
         videoList.add(VideoAsset.getDefault());
       }
 
+      // Create daily content with ALL data
       final dailyContent = DailyContent(
         date: date,
-        quote: quote,
+        quotes: quotes, // Changed to support multiple quotes
         musicList: musicList,
         pictureList: pictureList,
         videoList: videoList,
       );
 
       log(
-        'Successfully loaded daily content: Quote=${quote.englishQuote.substring(0, 30)}..., Music=${musicList.length}, Pictures=${pictureList.length}, Videos=${videoList.length}',
+        'Successfully loaded daily content: ${quotes.length} quotes, ${musicList.length} music, ${pictureList.length} pictures, ${videoList.length} videos',
       );
 
       return dailyContent;
@@ -258,17 +268,13 @@ class DataService {
     DateTime endDate,
   ) async {
     final contentMap = <String, DailyContent>{};
-    final currentDate = DateTime(
-      startDate.year,
-      startDate.month,
-      startDate.day,
-    );
+    var currentDate = DateTime(startDate.year, startDate.month, startDate.day);
     final end = DateTime(endDate.year, endDate.month, endDate.day);
 
     while (currentDate.isBefore(end) || currentDate.isAtSameMomentAs(end)) {
       final dateKey = DateFormat('yyyy-MM-dd').format(currentDate);
       contentMap[dateKey] = await getDailyContent(currentDate);
-      currentDate.add(const Duration(days: 1));
+      currentDate = currentDate.add(const Duration(days: 1));
     }
 
     return contentMap;

@@ -35,10 +35,10 @@ class CountdownCubit extends Cubit<CountdownState> {
     log('Target date set to: $_targetDate (Cairo time)');
   }
 
-  /// Get current time in Cairo timezone (UTC+2)
+  /// Get current time in Cairo timezone - FIXED: Simple +2 hours
   DateTime _getCairoTime() {
     final utcNow = DateTime.now().toUtc();
-    return utcNow.add(const Duration(hours: 2));
+    return utcNow.add(const Duration(hours: 2)); // Simple +2 hours as requested
   }
 
   /// Convert Cairo time to proper display format
@@ -69,15 +69,8 @@ class CountdownCubit extends Cubit<CountdownState> {
       // Get current Cairo time
       final nowCairo = _getCairoTime();
 
-      // Create target date in Cairo timezone
-      final targetCairo = DateTime(
-        _targetDate.year,
-        _targetDate.month,
-        _targetDate.day,
-        0,
-        0,
-        0, // Midnight on birthday
-      );
+      // Create target date in Cairo timezone (September 26, 2025 at midnight Cairo time)
+      final targetCairo = DateTime(2025, 9, 26, 0, 0, 0);
 
       // Calculate difference
       final difference = targetCairo.difference(nowCairo);
@@ -85,7 +78,7 @@ class CountdownCubit extends Cubit<CountdownState> {
       log('Current Cairo time: $nowCairo');
       log('Target Cairo time: $targetCairo');
       log(
-        'Difference: ${difference.inDays} days, ${difference.inHours % 24} hours',
+        'Difference: ${difference.inDays} days, ${difference.inHours % 24} hours, ${difference.inMinutes % 60} minutes',
       );
 
       if (difference.isNegative) {

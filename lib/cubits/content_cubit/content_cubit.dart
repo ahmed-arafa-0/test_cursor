@@ -3,8 +3,6 @@ import 'package:meta/meta.dart';
 import 'dart:developer';
 import '../../models/data_models.dart';
 import '../../services/data_service.dart';
-// import '../services/data_service.dart';
-// import '../models/data_models.dart';
 
 part 'content_state.dart';
 
@@ -30,6 +28,10 @@ class ContentCubit extends Cubit<ContentState> {
       final content = await DataService.getDailyContent(targetDate);
       _currentContent = content;
 
+      log(
+        'Loaded ${content.quotes.length} quotes, ${content.musicList.length} music, ${content.pictureList.length} pictures, ${content.videoList.length} videos',
+      );
+
       emit(ContentLoaded(content: content));
     } catch (e, stackTrace) {
       log('Error loading daily content: $e', stackTrace: stackTrace);
@@ -45,11 +47,13 @@ class ContentCubit extends Cubit<ContentState> {
     }
   }
 
-  /// Get quote for current language
+  /// Get quote for current language (randomized from all quotes for today)
   String getQuoteForLanguage(String language) {
     if (_currentContent == null)
       return Quote.getDefault().getQuoteForLanguage(language);
-    return _currentContent!.quote.getQuoteForLanguage(language);
+    return _currentContent!.getQuoteForLanguage(
+      language,
+    ); // This now randomizes
   }
 
   /// Get current music track
@@ -58,15 +62,51 @@ class ContentCubit extends Cubit<ContentState> {
     return _currentContent!.getRandomMusic();
   }
 
-  /// Get current picture
+  /// Get current picture - FIXED to not load default first
   Picture getCurrentPicture() {
     if (_currentContent == null) return Picture.getDefault();
+
+    // If we have pictures for today, use them. Otherwise use default.
+    if (_currentContent!.pictureList.isNotEmpty) {
+      // Check if the first item is a default (from assets)
+      final firstPicture = _currentContent!.pictureList.first;
+      if (firstPicture.url.startsWith('assets/')) {
+        // Skip defaults and get actual content if available
+        final nonDefaultPictures = _currentContent!.pictureList
+            .where((pic) => !pic.url.startsWith('assets/'))
+            .toList();
+        if (nonDefaultPictures.isNotEmpty) {
+          final index =
+              DateTime.now().millisecondsSinceEpoch % nonDefaultPictures.length;
+          return nonDefaultPictures[index];
+        }
+      }
+    }
+
     return _currentContent!.getRandomPicture();
   }
 
-  /// Get current video
+  /// Get current video - FIXED to not load default first
   VideoAsset getCurrentVideo() {
     if (_currentContent == null) return VideoAsset.getDefault();
+
+    // If we have videos for today, use them. Otherwise use default.
+    if (_currentContent!.videoList.isNotEmpty) {
+      // Check if the first item is a default (from assets)
+      final firstVideo = _currentContent!.videoList.first;
+      if (firstVideo.url.startsWith('assets/')) {
+        // Skip defaults and get actual content if available
+        final nonDefaultVideos = _currentContent!.videoList
+            .where((vid) => !vid.url.startsWith('assets/'))
+            .toList();
+        if (nonDefaultVideos.isNotEmpty) {
+          final index =
+              DateTime.now().millisecondsSinceEpoch % nonDefaultVideos.length;
+          return nonDefaultVideos[index];
+        }
+      }
+    }
+
     return _currentContent!.getRandomVideo();
   }
 
@@ -78,7 +118,15 @@ class ContentCubit extends Cubit<ContentState> {
         : [Music.getDefault()];
   }
 
-  /// Refresh current content
+  /// Get all quotes for current day
+  List<Quote> getAllQuotes() {
+    if (_currentContent == null) return [Quote.getDefault()];
+    return _currentContent!.quotes.isNotEmpty
+        ? _currentContent!.quotes
+        : [Quote.getDefault()];
+  }
+
+  /// Refresh current content (will re-randomize quotes)
   Future<void> refresh() async {
     await loadDailyContent(_currentDate);
   }
@@ -108,11 +156,27 @@ class ContentCubit extends Cubit<ContentState> {
   bool get isUsingNetworkContent {
     if (_currentContent == null) return false;
 
-    // Check if we're using default assets (indicates fallback)
-    final quote = _currentContent!.quote;
-    final defaultQuote = Quote.getDefault();
+    // Check if we have any non-default content
+    final hasNetworkQuotes = _currentContent!.quotes.any(
+      (quote) => quote.englishQuote != Quote.getDefault().englishQuote,
+    );
 
-    return quote.englishQuote != defaultQuote.englishQuote;
+    final hasNetworkPictures = _currentContent!.pictureList.any(
+      (pic) => !pic.url.startsWith('assets/'),
+    );
+
+    final hasNetworkVideos = _currentContent!.videoList.any(
+      (vid) => !vid.url.startsWith('assets/'),
+    );
+
+    final hasNetworkMusic = _currentContent!.musicList.any(
+      (music) => !music.url.startsWith('assets/'),
+    );
+
+    return hasNetworkQuotes ||
+        hasNetworkPictures ||
+        hasNetworkVideos ||
+        hasNetworkMusic;
   }
 
   /// Get content status info
@@ -132,5 +196,18 @@ class ContentCubit extends Cubit<ContentState> {
   Future<void> forceReload() async {
     DataService.clearCache();
     await refresh();
+  }
+
+  /// Get random quote that changes on each call
+  String getRandomQuoteForLanguage(String language) {
+    if (_currentContent == null || _currentContent!.quotes.isEmpty) {
+      return Quote.getDefault().getQuoteForLanguage(language);
+    }
+
+    // Use current timestamp + random factor for better randomization
+    final randomSeed =
+        DateTime.now().millisecondsSinceEpoch + DateTime.now().microsecond;
+    final index = randomSeed % _currentContent!.quotes.length;
+    return _currentContent!.quotes[index].getQuoteForLanguage(language);
   }
 }

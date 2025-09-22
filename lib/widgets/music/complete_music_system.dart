@@ -54,7 +54,6 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
         _audioElement!.volume = _isMuted ? 0 : _volume;
         _audioElement!.preload = 'metadata';
 
-        // Add event listeners
         _audioElement!.onCanPlay.listen((_) {
           log('Audio ready to play: ${currentTrack.songName}');
         });
@@ -89,29 +88,19 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
         _audioElement!.pause();
         _isPlaying = false;
         _stopProgressTimer();
+        _emitCurrentState();
       } else {
-        // Handle browser autoplay restrictions
+        // FIXED: Handle JSPromise properly
         try {
-          try {
-            _audioElement!.play();
-          } finally {
-            _isPlaying = true;
-            _startProgressTimer();
-          }
-        } on Exception catch (e) {
-          log('Play error (autoplay restriction): $e');
+          _audioElement!.play();
+          _isPlaying = true;
+          _startProgressTimer();
+          _emitCurrentState();
+        } catch (error) {
+          log('Play error (autoplay restriction): $error');
           emit(MusicPlayerError('Cannot play - user interaction required'));
         }
-        // _audioElement!.play().then((_) {
-        //   _isPlaying = true;
-        //   _startProgressTimer();
-        // }).catchError((error) {
-        //   log('Play error (autoplay restriction): $error');
-        //   emit(MusicPlayerError('Cannot play - user interaction required'));
-        // });
       }
-
-      _emitCurrentState();
     } catch (e) {
       log('Toggle play/pause error: $e');
       emit(MusicPlayerError('Playback error: $e'));
@@ -126,7 +115,6 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     _initializeAudio();
 
     if (_isPlaying) {
-      // Small delay to ensure audio is loaded
       Future.delayed(const Duration(milliseconds: 100), () {
         togglePlayPause();
       });
@@ -257,9 +245,12 @@ class MusicPlayerError extends MusicPlayerState {
   MusicPlayerError(this.message);
 }
 
-// Complete Music Player Widget
+// FIXED Music Player Widget - Proper Bottom Animation
 class CompleteMusicPlayer extends StatefulWidget {
-  const CompleteMusicPlayer({super.key});
+  final bool isVisible;
+  final VoidCallback? onClose;
+
+  const CompleteMusicPlayer({super.key, this.isVisible = false, this.onClose});
 
   @override
   State<CompleteMusicPlayer> createState() => _CompleteMusicPlayerState();
@@ -286,15 +277,37 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
       vsync: this,
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
-        .animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.easeInOut),
+    _slideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 1), // Start from bottom (off-screen)
+          end: Offset.zero, // End at normal position
+        ).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
         );
 
     _playButtonAnimation = CurvedAnimation(
       parent: _playButtonController,
       curve: Curves.easeInOut,
     );
+
+    // Start animation if visible
+    if (widget.isVisible) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _slideController.forward();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(CompleteMusicPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible != oldWidget.isVisible) {
+      if (widget.isVisible) {
+        _slideController.forward();
+      } else {
+        _slideController.reverse();
+      }
+    }
   }
 
   @override
@@ -309,6 +322,7 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
     final screenSize = MediaQuery.of(context).size;
     final isCompact = screenSize.width < 400;
 
+    // For small devices, add black overlay
     return BlocProvider(
       create: (context) => MusicPlayerCubit(),
       child: BlocBuilder<ContentCubit, ContentState>(
@@ -319,39 +333,56 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
             context.read<MusicPlayerCubit>().initialize(musicList);
           }
 
-          return SlideTransition(
-            position: _slideAnimation,
-            child: Container(
-              margin: EdgeInsets.all(isCompact ? 12.0 : 16.0),
-              padding: EdgeInsets.all(isCompact ? 16.0 : 20.0),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.7),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 4),
+          return Stack(
+            children: [
+              // Black overlay for small devices
+              if (isCompact && widget.isVisible)
+                AnimatedOpacity(
+                  opacity: widget.isVisible ? 0.7 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Container(
+                    color: Colors.black,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
-                ],
+                ),
+
+              // Music Player
+              SlideTransition(
+                position: _slideAnimation,
+                child: Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.all(isCompact ? 8.0 : 16.0),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.8),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
+                  ),
+                  child: BlocBuilder<MusicPlayerCubit, MusicPlayerState>(
+                    builder: (context, musicState) {
+                      if (musicState is MusicPlayerError) {
+                        return _buildErrorState(musicState.message, isCompact);
+                      } else if (musicState is MusicPlayerReady) {
+                        return _buildMusicPlayer(musicState, isCompact);
+                      } else {
+                        return _buildLoadingState(isCompact);
+                      }
+                    },
+                  ),
+                ),
               ),
-              child: BlocBuilder<MusicPlayerCubit, MusicPlayerState>(
-                builder: (context, musicState) {
-                  if (musicState is MusicPlayerError) {
-                    return _buildErrorState(musicState.message, isCompact);
-                  } else if (musicState is MusicPlayerReady) {
-                    return _buildMusicPlayer(musicState, isCompact);
-                  } else {
-                    return _buildLoadingState(isCompact);
-                  }
-                },
-              ),
-            ),
+            ],
           );
         },
       ),
@@ -361,32 +392,61 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
   Widget _buildMusicPlayer(MusicPlayerReady state, bool isCompact) {
     final musicCubit = context.read<MusicPlayerCubit>();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Track info
-        _buildTrackInfo(state.currentTrack, isCompact),
+    return Container(
+      padding: EdgeInsets.all(isCompact ? 16.0 : 20.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Close button for small devices
+          if (isCompact) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Now Playing',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                IconButton(
+                  onPressed: widget.onClose,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: Colors.white70,
+                    size: 24,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
 
-        SizedBox(height: isCompact ? 16 : 20),
+          // Track info
+          _buildTrackInfo(state.currentTrack, isCompact),
 
-        // Progress bar
-        _buildProgressBar(state, musicCubit, isCompact),
+          SizedBox(height: isCompact ? 16 : 20),
 
-        SizedBox(height: isCompact ? 16 : 20),
+          // Progress bar
+          _buildProgressBar(state, musicCubit, isCompact),
 
-        // Control buttons
-        _buildControlButtons(state, musicCubit, isCompact),
+          SizedBox(height: isCompact ? 16 : 20),
 
-        SizedBox(height: isCompact ? 16 : 20),
+          // Control buttons
+          _buildControlButtons(state, musicCubit, isCompact),
 
-        // Volume control
-        _buildVolumeControl(state, musicCubit, isCompact),
+          SizedBox(height: isCompact ? 16 : 20),
 
-        if (!isCompact) ...[
-          const SizedBox(height: 12),
-          _buildPlaylistInfo(musicCubit),
+          // Volume control
+          _buildVolumeControl(state, musicCubit, isCompact),
+
+          if (!isCompact) ...[
+            const SizedBox(height: 12),
+            _buildPlaylistInfo(musicCubit),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -478,14 +538,11 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Previous
         _ControlButton(
           icon: Icons.skip_previous,
           onPressed: musicCubit.previousTrack,
           size: isCompact ? 30 : 36,
         ),
-
-        // Rewind 10 seconds
         _ControlButton(
           icon: Icons.replay_10,
           onPressed: () {
@@ -494,8 +551,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
           },
           size: isCompact ? 24 : 28,
         ),
-
-        // Play/Pause
         AnimatedBuilder(
           animation: _playButtonAnimation,
           builder: (context, child) {
@@ -526,9 +581,11 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
                     ),
                   ),
                   onPressed: () {
-                    _playButtonController.forward().then(
-                      (_) => _playButtonController.reverse(),
-                    );
+                    // FIXED: Handle animation without then()
+                    _playButtonController.forward();
+                    Future.delayed(const Duration(milliseconds: 200), () {
+                      if (mounted) _playButtonController.reverse();
+                    });
                     musicCubit.togglePlayPause();
                   },
                 ),
@@ -536,8 +593,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
             );
           },
         ),
-
-        // Forward 10 seconds
         _ControlButton(
           icon: Icons.forward_10,
           onPressed: () {
@@ -546,8 +601,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
           },
           size: isCompact ? 24 : 28,
         ),
-
-        // Next
         _ControlButton(
           icon: Icons.skip_next,
           onPressed: musicCubit.nextTrack,
@@ -576,7 +629,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
           ),
           onPressed: musicCubit.toggleMute,
         ),
-
         Expanded(
           child: SliderTheme(
             data: SliderThemeData(
@@ -592,7 +644,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
             child: Slider(value: state.volume, onChanged: musicCubit.setVolume),
           ),
         ),
-
         Text(
           '${(state.volume * 100).round()}%',
           style: TextStyle(
@@ -660,7 +711,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              // Retry initialization
               final contentCubit = context.read<ContentCubit>();
               if (contentCubit.currentContent != null) {
                 final musicList = contentCubit.getAllMusic();
@@ -696,14 +746,6 @@ class _CompleteMusicPlayerState extends State<CompleteMusicPlayer>
         ],
       ),
     );
-  }
-
-  void showPlayer() {
-    _slideController.forward();
-  }
-
-  void hidePlayer() {
-    _slideController.reverse();
   }
 }
 

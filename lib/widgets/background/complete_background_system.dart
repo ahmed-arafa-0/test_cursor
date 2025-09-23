@@ -214,13 +214,24 @@ class _VideoBackgroundState extends State<_VideoBackground> {
   void _setupVideoElement() {
     if (_videoElement == null) return;
 
+    // FIREBASE FIX: Proper asset path handling
+    String videoSrc = _currentVideoUrl;
+    if (widget.isAsset && !videoSrc.startsWith('http')) {
+      if (!videoSrc.startsWith('assets/')) {
+        videoSrc = 'assets/$videoSrc';
+      }
+    }
+
+    debugPrint('🎥 Setting up video: $videoSrc');
+
     _videoElement!
-      ..src = _currentVideoUrl
+      ..src = videoSrc
       ..autoplay = true
       ..loop = true
       ..muted = true
       ..preload = 'auto'
       ..setAttribute('playsinline', 'true')
+      ..setAttribute('crossorigin', 'anonymous') // CRITICAL for Firebase
       ..style.width = '100%'
       ..style.height = '100%'
       ..style.objectFit = 'cover'
@@ -229,38 +240,20 @@ class _VideoBackgroundState extends State<_VideoBackground> {
       ..style.left = '0';
 
     _videoElement!.onCanPlay.listen((_) {
+      debugPrint('🎥 Video ready');
       if (mounted) {
         setState(() {
           _isVideoInitialized = true;
           _hasError = false;
         });
       }
-      try {
-        _videoElement!.play();
-      } on Exception catch (e) {
-        debugPrint('Video play error: $e');
-        if (mounted) {
-          setState(() {
-            _hasError = true;
-          });
-        }
-      }
-      // _videoElement!.play().catchError((error) {
-      //   debugPrint('Video play error: $error');
-      //   if (mounted) {
-      //     setState(() {
-      //       _hasError = true;
-      //     });
-      //   }
-      // });
+      _videoElement!.play();
     });
 
     _videoElement!.onError.listen((_) {
-      debugPrint('Video error: ${_videoElement!.error?.message}');
+      debugPrint('🎥 Video error: ${_videoElement!.error?.message}');
       if (mounted) {
-        setState(() {
-          _hasError = true;
-        });
+        setState(() => _hasError = true);
       }
     });
   }

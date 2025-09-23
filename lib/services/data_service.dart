@@ -24,9 +24,10 @@ class DataService {
   static DateTime? _lastCacheUpdate;
 
   /// Fetch data from Google Sheet by GID with DETAILED LOGGING
+  // Replace the _fetchSheetByGid method in lib/services/data_service.dart
+
   static Future<List<Map<String, String>>> _fetchSheetByGid(String gid) async {
     try {
-      // FORCE REFRESH: Don't use cache for debugging
       final url =
           'https://docs.google.com/spreadsheets/d/$_spreadsheetId/export?format=csv&gid=$gid';
 
@@ -54,7 +55,13 @@ class DataService {
         '🔍 DEBUGGING: First 200 chars of CSV: ${csvText.length > 200 ? csvText.substring(0, 200) : csvText}',
       );
 
-      final rows = const CsvToListConverter(eol: '\n').convert(csvText);
+      // ENHANCED: Parse with your delimiter validation approach
+      final rows = const CsvToListConverter(
+        eol: '\n',
+        fieldDelimiter: ',',
+        textDelimiter: '"',
+        shouldParseNumbers: false,
+      ).convert(csvText);
 
       log('🔍 DEBUGGING: Total CSV rows parsed: ${rows.length}');
 
@@ -63,7 +70,7 @@ class DataService {
         return [];
       }
 
-      // Process headers and data
+      // Process headers
       final headers = rows.first.map((h) => h.toString().trim()).toList();
       log('🔍 DEBUGGING: Headers found: $headers');
 
@@ -78,26 +85,73 @@ class DataService {
         final row = dataRows[i];
         final map = <String, String>{};
 
+        // Build the row map
         for (var j = 0; j < headers.length; j++) {
           final header = headers[j];
           final value = j < row.length ? row[j].toString().trim() : '';
-          map[header] = value;
+
+          // Clean the value
+          String cleanValue = value
+              .replaceAll(RegExp(r'^"'), '') // Remove leading quote
+              .replaceAll(RegExp(r'"$'), '') // Remove trailing quote
+              .replaceAll('""', '"') // Replace double quotes with single
+              .trim();
+
+          map[header] = cleanValue;
         }
 
-        result.add(map);
-        final englishQuote = map['English Quote'] ?? '';
-        final preview = englishQuote.isNotEmpty
-            ? englishQuote.substring(
-                0,
-                englishQuote.length < 50 ? englishQuote.length : 50,
-              )
-            : 'N/A';
-        log(
-          '🔍 DEBUGGING Row ${i + 1}: Date="${map['Date']}", English="$preview..."',
-        );
+        // ENHANCED VALIDATION using your delimiter approach
+        if (gid == _gidQuotes) {
+          // Check for your completion marker
+          final delimiter = map['Quote Delimiter'] ?? '';
+          final hasMarker = delimiter.contains('#QuoteFinished#');
+
+          if (!hasMarker) {
+            log(
+              '⚠️ WARNING: Row ${i + 1} missing #QuoteFinished# marker - SKIPPING incomplete quote',
+            );
+            continue;
+          }
+
+          // Validate date
+          final date = map['Date']?.trim();
+          if (date == null || date.isEmpty || date == 'Date') {
+            log('⚠️ WARNING: Row ${i + 1} invalid date "$date" - SKIPPING');
+            continue;
+          }
+
+          // Enhanced logging for quotes
+          final englishQuote = map['English Quote'] ?? '';
+          final greekQuote = map['Greek Quote'] ?? '';
+
+          log('✅ VALID QUOTE ROW ${i + 1}: Date="$date", Marker="$delimiter"');
+          log(
+            '   English: "${englishQuote.length > 30 ? englishQuote.substring(0, 30) + '...' : englishQuote}"',
+          );
+          log(
+            '   Greek: "${greekQuote.length > 30 ? greekQuote.substring(0, 30) + '...' : greekQuote}"',
+          );
+
+          // Final validation - Greek quote should NOT contain suspicious content
+          if (greekQuote.contains('2025-') ||
+              greekQuote.contains('#QuoteFinished#')) {
+            log('❌ ERROR: Greek quote contains invalid data - SKIPPING row');
+            continue;
+          }
+        }
+
+        // Add valid rows only
+        final dateValue = map['Date']?.trim();
+        if (dateValue != null && dateValue.isNotEmpty && dateValue != 'Date') {
+          result.add(map);
+
+          if (gid != _gidQuotes) {
+            log('🔍 DEBUGGING Row ${i + 1}: Date="$dateValue"');
+          }
+        }
       }
 
-      log('✅ Successfully fetched ${result.length} rows from GID: $gid');
+      log('✅ Successfully fetched ${result.length} VALID rows from GID: $gid');
       return result;
     } catch (e, stackTrace) {
       log('❌ Error fetching sheet GID $gid: $e', stackTrace: stackTrace);

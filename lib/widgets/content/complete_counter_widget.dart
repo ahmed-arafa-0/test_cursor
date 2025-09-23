@@ -5,7 +5,6 @@ import '../../cubits/countdown_cubit/countdown_cubit.dart';
 import '../../cubits/language_cubit/language_cubit.dart';
 import '../../cubits/content_cubit/content_cubit.dart';
 import '../../utils/font_manager.dart';
-// import '../../languages/app_language.dart';
 
 class CompleteCounterWidget extends StatefulWidget {
   const CompleteCounterWidget({super.key});
@@ -166,10 +165,7 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
           // Signature
           _buildSignature(screenWidth, isRTL),
 
-          SizedBox(height: screenWidth < 400 ? 8 : 12),
-
-          // Cairo Time Info (FIXED)
-          _buildTimeInfo(state, language, screenWidth, isRTL),
+          // REMOVED: Cairo Time Info - No longer displayed
         ],
       ),
     );
@@ -548,44 +544,6 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
         style: FontManager.applyWebOptimizations(
           FontManager.getSignatureStyle(fontSize: fontSize),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTimeInfo(
-    CountdownTicking state,
-    String language,
-    double screenWidth,
-    bool isRTL,
-  ) {
-    final fontSize = FontManager.getResponsiveFontSize(
-      screenWidth: screenWidth,
-      baseFontSize: 11,
-      mobileScale: 0.9,
-    );
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
-        children: [
-          Icon(Icons.schedule, color: Colors.white60, size: fontSize + 2),
-          const SizedBox(width: 6),
-          Text(
-            'Cairo Time: ${state.cairoTimeFormatted}', // Using the formatted time from state
-            style: TextStyle(
-              color: Colors.white60,
-              fontSize: fontSize,
-              fontFamily: 'monospace',
-            ),
-            textDirection: TextDirection.ltr, // Always LTR for time display
-          ),
-        ],
       ),
     );
   }

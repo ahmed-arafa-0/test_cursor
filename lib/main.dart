@@ -65,7 +65,7 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
   String _currentVideoViewType = '';
   bool _videoInitialized = false;
 
-  // Music player
+  // Music player with RESUME functionality
   html.HTMLAudioElement? _audioElement;
   bool _isPlaying = false;
   double _currentTime = 0.0;
@@ -74,6 +74,8 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
   int _currentTrackIndex = 0;
   Timer? _progressTimer;
   List<Map<String, String>> _playlist = [];
+  bool _wasPlayingBeforeHide =
+      false; // NEW: Track if music was playing when hidden
 
   @override
   void initState() {
@@ -83,11 +85,34 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
 
   void _toggleMusicPlayer() {
     setState(() {
-      _showMusicPlayer = !_showMusicPlayer;
       if (_showMusicPlayer) {
-        _initializeMusicPlayer();
+        // HIDING: Remember if music was playing
+        _wasPlayingBeforeHide = _isPlaying;
+      } else {
+        // SHOWING: Initialize if needed
+        if (_playlist.isEmpty) {
+          _initializeMusicPlayer();
+        }
+        // Resume if it was playing before
+        if (_wasPlayingBeforeHide && _audioElement != null && !_isPlaying) {
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _togglePlayPause();
+          });
+        }
       }
+      _showMusicPlayer = !_showMusicPlayer;
     });
+  }
+
+  void _refreshQuotes() {
+    context.read<ContentCubit>().refresh();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Quotes refreshed! 🔄'),
+        duration: Duration(seconds: 2),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   void _toggleBackground() {
@@ -255,22 +280,38 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
     });
   }
 
+  // FIXED: Auto-play next track
   void _nextTrack() {
     if (_playlist.isEmpty) return;
+    final wasPlaying = _isPlaying;
     _currentTrackIndex = (_currentTrackIndex + 1) % _playlist.length;
     _loadTrack(_currentTrackIndex);
-    if (_isPlaying) {
-      Future.delayed(const Duration(milliseconds: 100), _togglePlayPause);
+
+    // Auto-play if it was playing before
+    if (wasPlaying) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (_audioElement != null) {
+          _togglePlayPause();
+        }
+      });
     }
   }
 
+  // FIXED: Auto-play previous track
   void _previousTrack() {
     if (_playlist.isEmpty) return;
+    final wasPlaying = _isPlaying;
     _currentTrackIndex =
         (_currentTrackIndex - 1 + _playlist.length) % _playlist.length;
     _loadTrack(_currentTrackIndex);
-    if (_isPlaying) {
-      Future.delayed(const Duration(milliseconds: 100), _togglePlayPause);
+
+    // Auto-play if it was playing before
+    if (wasPlaying) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (_audioElement != null) {
+          _togglePlayPause();
+        }
+      });
     }
   }
 
@@ -460,8 +501,8 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                   padding: EdgeInsets.only(
                     top: 80,
                     bottom: _showMusicPlayer
-                        ? (isCompact ? 140 : 120)
-                        : 40, // SMALLER
+                        ? (isCompact ? 110 : 90)
+                        : 40, // ULTRA COMPACT
                     left: 16,
                     right: 16,
                   ),
@@ -481,7 +522,7 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
             ),
           ),
 
-          // Top buttons
+          // Top buttons - NOW WITH 4 BUTTONS INCLUDING REFRESH
           Positioned(
             top: topPadding + 16,
             right: edgePadding,
@@ -513,6 +554,28 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                   ),
                 ),
                 SizedBox(width: buttonSpacing),
+                // NEW: Refresh Quotes Button
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: IconButton(
+                    onPressed: _refreshQuotes,
+                    icon: const Icon(
+                      Icons.refresh,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+                SizedBox(width: buttonSpacing),
                 EnhancedMusicButton(
                   isVisible: _showMusicPlayer,
                   onPressed: _toggleMusicPlayer,
@@ -521,106 +584,7 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
             ),
           ),
 
-          // Status indicators
-          Positioned(
-            top: topPadding + 16,
-            left: edgePadding,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                BlocBuilder<ContentCubit, ContentState>(
-                  builder: (context, state) {
-                    String status = 'Loading...';
-                    Color color = Colors.yellow;
-                    IconData icon = Icons.sync;
-
-                    if (state is ContentLoaded) {
-                      final contentCubit = context.read<ContentCubit>();
-                      if (contentCubit.isUsingNetworkContent) {
-                        status = 'Live Data';
-                        color = Colors.green;
-                        icon = Icons.cloud_done;
-                      } else {
-                        status = 'Default';
-                        color = Colors.orange;
-                        icon = Icons.cloud_off;
-                      }
-                    } else if (state is ContentError) {
-                      status = 'Offline';
-                      color = Colors.red;
-                      icon = Icons.error_outline;
-                    }
-
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: color.withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(icon, color: color, size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            status,
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: _backgroundMode == 0
-                          ? Colors.grey.withOpacity(0.5)
-                          : Colors.blue.withOpacity(0.5),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getBackgroundModeIcon(),
-                        color: _backgroundMode == 0 ? Colors.grey : Colors.blue,
-                        size: 12,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _getBackgroundModeText(),
-                        style: TextStyle(
-                          color: _backgroundMode == 0
-                              ? Colors.grey
-                              : Colors.blue,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // COMPACT Music Player with ALL working features
+          // ULTRA COMPACT Music Player - EVEN SMALLER BOX, BIGGER TEXT
           if (_showMusicPlayer)
             Positioned(
               bottom: 0,
@@ -631,23 +595,24 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOutCubic,
                 child: Container(
-                  margin: const EdgeInsets.all(8), // VERY SMALL margins
-                  padding: const EdgeInsets.all(10), // VERY SMALL padding
+                  margin: const EdgeInsets.all(32), // ULTRA SMALL margins
+                  padding: const EdgeInsets.all(16), // ULTRA SMALL padding
                   decoration: BoxDecoration(
                     color: Colors.black.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(12), // SMALLER radius
+                    borderRadius: BorderRadius.circular(8), // SMALLER radius
                     border: Border.all(color: Colors.white.withOpacity(0.1)),
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // COMPACT Header
+                      // ULTRA COMPACT Header with BIGGER text
                       Row(
                         children: [
+                          const Spacer(),
                           const Text(
                             '🎵',
-                            style: TextStyle(fontSize: 14),
-                          ), // SMALLER emoji
+                            style: TextStyle(fontSize: 16),
+                          ), // Bigger emoji
                           const SizedBox(width: 6),
                           Expanded(
                             child: _playlist.isNotEmpty
@@ -659,9 +624,9 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                                         _playlist[_currentTrackIndex]['title']!,
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          fontSize: 14, // BIGGER text
                                           fontWeight: FontWeight.w500,
-                                        ), // SMALLER
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -669,8 +634,8 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                                         _playlist[_currentTrackIndex]['artist']!,
                                         style: const TextStyle(
                                           color: Colors.white70,
-                                          fontSize: 10,
-                                        ), // SMALLER
+                                          fontSize: 12, // BIGGER text
+                                        ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -680,22 +645,24 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                                     'No tracks',
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 14, // BIGGER text
                                     ),
                                   ),
                           ),
+
+                          const Spacer(),
                           IconButton(
                             onPressed: _toggleMusicPlayer,
                             icon: const Icon(
                               Icons.keyboard_arrow_down,
                               color: Colors.white70,
                               size: 18,
-                            ), // SMALLER
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ), // SMALLER
+                              minWidth: 28, // SMALLER constraints
+                              minHeight: 28,
+                            ),
                           ),
                         ],
                       ),
@@ -707,9 +674,9 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                             _formatTime(_currentTime),
                             style: const TextStyle(
                               color: Colors.white70,
-                              fontSize: 9,
+                              fontSize: 11, // BIGGER text
                             ),
-                          ), // SMALLER
+                          ),
                           Expanded(
                             child: Slider(
                               value: _duration > 0
@@ -724,32 +691,32 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                             _formatTime(_duration),
                             style: const TextStyle(
                               color: Colors.white70,
-                              fontSize: 9,
+                              fontSize: 11, // BIGGER text
                             ),
-                          ), // SMALLER
+                          ),
                         ],
                       ),
 
-                      // COMPACT Controls with REAL functionality
+                      // ULTRA COMPACT Controls with REAL functionality and AUTO-PLAY
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           IconButton(
-                            onPressed: _previousTrack, // WORKING previous
+                            onPressed: _previousTrack, // AUTO-PLAY previous
                             icon: const Icon(
                               Icons.skip_previous,
                               color: Colors.white70,
                               size: 20,
-                            ), // SMALLER
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ), // SMALLER
+                              minWidth: 28, // SMALLER
+                              minHeight: 28,
+                            ),
                           ),
                           Container(
-                            width: 36, // SMALLER
-                            height: 36,
+                            width: 32, // SMALLER
+                            height: 32,
                             decoration: const BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
@@ -759,30 +726,32 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                               icon: Icon(
                                 _isPlaying ? Icons.pause : Icons.play_arrow,
                                 color: Colors.black,
-                                size: 18,
-                              ), // SMALLER
+                                size: 16, // SMALLER
+                              ),
                               padding: EdgeInsets.zero,
                             ),
                           ),
                           IconButton(
-                            onPressed: _nextTrack, // WORKING next
+                            onPressed: _nextTrack, // AUTO-PLAY next
                             icon: const Icon(
                               Icons.skip_next,
                               color: Colors.white70,
                               size: 20,
-                            ), // SMALLER
+                            ),
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ), // SMALLER
+                              minWidth: 28, // SMALLER
+                              minHeight: 28,
+                            ),
                           ),
                         ],
                       ),
 
-                      // WORKING Volume control
+                      // WORKING Volume control - SMALLER SLIDER
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          const Spacer(),
                           Icon(
                             _volume == 0
                                 ? Icons.volume_off
@@ -790,9 +759,12 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                                       ? Icons.volume_down
                                       : Icons.volume_up),
                             color: Colors.white70,
-                            size: 14, // SMALLER
+                            size: 14,
                           ),
+                          const SizedBox(width: 8), // Spacing before slider
                           Expanded(
+                            flex:
+                                2, // SMALLER volume slider (2/3 of progress slider)
                             child: Slider(
                               value: _volume,
                               onChanged: _setVolume, // WORKING volume control
@@ -800,13 +772,16 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                               inactiveColor: Colors.white30,
                             ),
                           ),
+                          // const Spacer(), // Push percentage to right
                           Text(
                             '${(_volume * 100).round()}%',
                             style: const TextStyle(
                               color: Colors.white70,
-                              fontSize: 9,
+                              fontSize: 11, // BIGGER text
                             ),
-                          ), // SMALLER
+                          ),
+
+                          const Spacer(),
                         ],
                       ),
                     ],

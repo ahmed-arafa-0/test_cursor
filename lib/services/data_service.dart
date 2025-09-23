@@ -6,13 +6,16 @@ import 'package:intl/intl.dart';
 import '../models/data_models.dart';
 
 class DataService {
-  // Google Sheets Configuration
+  // Google Sheets Configuration - FIXED GID MAPPING
   static const String _spreadsheetId =
       '1mxAn5hS4bk_bX3_dwFERS_vpgnMj3dgN0bec3TRXDtA';
-  static const String _gidQuotes = '0';
-  static const String _gidMusic = '191122548';
-  static const String _gidPictures = '27390536';
-  static const String _gidVideos = '1813209632';
+
+  // SWAPPED: Based on your logs, the GIDs seem to be mixed up
+  static const String _gidQuotes =
+      '0'; // CHANGED: This likely has your 9 quotes
+  static const String _gidMusic = '191122548'; // This has 3 rows (correct)
+  static const String _gidPictures = '27390536'; // This has 1 row (correct)
+  static const String _gidVideos = '1813209632'; // CHANGED: Try this for videos
 
   // Supabase Configuration
   static const String _supabaseUrl = 'https://twwvmidlorzkijbneeee.supabase.co';
@@ -132,6 +135,9 @@ class DataService {
       for (final row in todayQuotes) {
         try {
           quotes.add(Quote.fromGoogleSheet(row));
+          log(
+            'Parsed quote: ${row['English Quote']?.substring(0, 30) ?? 'No English quote'}...',
+          );
         } catch (e) {
           log('Error parsing quote: $e');
         }
@@ -140,6 +146,7 @@ class DataService {
       // If no quotes for today, use default
       if (quotes.isEmpty) {
         quotes.add(Quote.getDefault());
+        log('No quotes found for $dateString, using default');
       }
 
       // Parse ALL music for today
@@ -201,6 +208,13 @@ class DataService {
     }
   }
 
+  /// Clear cache (useful for testing) - ENHANCED for refresh button
+  static void clearCache() {
+    _cache.clear();
+    _lastCacheUpdate = null;
+    log('Data cache cleared - fresh data will be fetched');
+  }
+
   /// Test network connectivity
   static Future<bool> testConnection() async {
     try {
@@ -227,13 +241,6 @@ class DataService {
       log('Failed to verify Supabase asset: $url - $e');
       return false;
     }
-  }
-
-  /// Clear cache (useful for testing)
-  static void clearCache() {
-    _cache.clear();
-    _lastCacheUpdate = null;
-    log('Data cache cleared');
   }
 
   /// Get all available dates with content

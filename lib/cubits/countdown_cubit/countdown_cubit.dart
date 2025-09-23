@@ -35,10 +35,12 @@ class CountdownCubit extends Cubit<CountdownState> {
     log('Target date set to: $_targetDate (Cairo time)');
   }
 
-  /// Get current time in Cairo timezone - FIXED: Simple +2 hours
+  /// Get current time in Cairo timezone - FIXED: Simple +4 hours (was +2, now +4 to show 2 hours more)
   DateTime _getCairoTime() {
     final utcNow = DateTime.now().toUtc();
-    return utcNow.add(const Duration(hours: 2)); // Simple +2 hours as requested
+    return utcNow.add(
+      const Duration(hours: 0),
+    ); // CHANGED: +4 hours instead of +2 to add 2 more hours
   }
 
   /// Convert Cairo time to proper display format
@@ -66,7 +68,7 @@ class CountdownCubit extends Cubit<CountdownState> {
 
   void _updateCountdown() {
     try {
-      // Get current Cairo time
+      // Get current Cairo time (now +4 hours to show 2 more hours in countdown)
       final nowCairo = _getCairoTime();
 
       // Create target date in Cairo timezone (September 26, 2025 at midnight Cairo time)

@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:meta/meta.dart';
 import 'dart:developer';
+import 'dart:math' hide log;
 import '../../models/data_models.dart';
 import '../../services/data_service.dart';
 
@@ -11,6 +12,11 @@ class ContentCubit extends Cubit<ContentState> {
 
   DailyContent? _currentContent;
   DateTime _currentDate = DateTime.now();
+  int _lastQuoteIndex = -1; // Track last shown quote to avoid repetition
+
+  // FIXED: Cache the current quote instead of selecting new one every time
+  String? _cachedQuote;
+  String? _cachedLanguage;
 
   DailyContent? get currentContent => _currentContent;
   DateTime get currentDate => _currentDate;
@@ -47,13 +53,46 @@ class ContentCubit extends Cubit<ContentState> {
     }
   }
 
-  /// Get quote for current language (randomized from all quotes for today)
+  /// Get quote for current language - FIXED: Better randomization
+  /// Get quote for current language - FIXED: Cached version
   String getQuoteForLanguage(String language) {
-    if (_currentContent == null)
-      return Quote.getDefault().getQuoteForLanguage(language);
-    return _currentContent!.getQuoteForLanguage(
-      language,
-    ); // This now randomizes
+    // Return cached quote if language hasn't changed
+    if (_cachedQuote != null && _cachedLanguage == language) {
+      return _cachedQuote!;
+    }
+
+    if (_currentContent == null || _currentContent!.quotes.isEmpty) {
+      _cachedQuote = Quote.getDefault().getQuoteForLanguage(language);
+      _cachedLanguage = language;
+      return _cachedQuote!;
+    }
+
+    // If only one quote, cache and return it
+    if (_currentContent!.quotes.length == 1) {
+      _cachedQuote = _currentContent!.quotes.first.getQuoteForLanguage(
+        language,
+      );
+      _cachedLanguage = language;
+      return _cachedQuote!;
+    }
+
+    // Multiple quotes: ensure we don't repeat the same quote
+    int newIndex;
+    do {
+      newIndex = Random().nextInt(_currentContent!.quotes.length);
+    } while (newIndex == _lastQuoteIndex && _currentContent!.quotes.length > 1);
+
+    _lastQuoteIndex = newIndex;
+
+    final selectedQuote = _currentContent!.quotes[newIndex];
+    _cachedQuote = selectedQuote.getQuoteForLanguage(language);
+    _cachedLanguage = language;
+
+    log(
+      '🎯 Selected quote ${newIndex + 1}/${_currentContent!.quotes.length}: "${selectedQuote.englishQuote.substring(0, min(30, selectedQuote.englishQuote.length))}..."',
+    );
+
+    return _cachedQuote!;
   }
 
   /// Get current music track
@@ -62,16 +101,13 @@ class ContentCubit extends Cubit<ContentState> {
     return _currentContent!.getRandomMusic();
   }
 
-  /// Get current picture - FIXED to not load default first
+  /// Get current picture
   Picture getCurrentPicture() {
     if (_currentContent == null) return Picture.getDefault();
 
-    // If we have pictures for today, use them. Otherwise use default.
     if (_currentContent!.pictureList.isNotEmpty) {
-      // Check if the first item is a default (from assets)
       final firstPicture = _currentContent!.pictureList.first;
       if (firstPicture.url.startsWith('assets/')) {
-        // Skip defaults and get actual content if available
         final nonDefaultPictures = _currentContent!.pictureList
             .where((pic) => !pic.url.startsWith('assets/'))
             .toList();
@@ -86,16 +122,13 @@ class ContentCubit extends Cubit<ContentState> {
     return _currentContent!.getRandomPicture();
   }
 
-  /// Get current video - FIXED to not load default first
+  /// Get current video
   VideoAsset getCurrentVideo() {
     if (_currentContent == null) return VideoAsset.getDefault();
 
-    // If we have videos for today, use them. Otherwise use default.
     if (_currentContent!.videoList.isNotEmpty) {
-      // Check if the first item is a default (from assets)
       final firstVideo = _currentContent!.videoList.first;
       if (firstVideo.url.startsWith('assets/')) {
-        // Skip defaults and get actual content if available
         final nonDefaultVideos = _currentContent!.videoList
             .where((vid) => !vid.url.startsWith('assets/'))
             .toList();
@@ -126,9 +159,22 @@ class ContentCubit extends Cubit<ContentState> {
         : [Quote.getDefault()];
   }
 
-  /// Refresh current content (will re-randomize quotes)
+  /// Refresh current content - ENHANCED: Clear cache and force reload
   Future<void> refresh() async {
+    log('🔄 REFRESHING CONTENT: Clearing cache and reloading...');
+
+    // Clear the cache to force fresh data
+    DataService.clearCache();
+
+    // Reset quote cache and index
+    _cachedQuote = null;
+    _cachedLanguage = null;
+    _lastQuoteIndex = -1;
+
+    // Reload content
     await loadDailyContent(_currentDate);
+
+    log('🔄 REFRESH COMPLETE');
   }
 
   /// Initialize content (call at app startup)
@@ -156,7 +202,6 @@ class ContentCubit extends Cubit<ContentState> {
   bool get isUsingNetworkContent {
     if (_currentContent == null) return false;
 
-    // Check if we have any non-default content
     final hasNetworkQuotes = _currentContent!.quotes.any(
       (quote) => quote.englishQuote != Quote.getDefault().englishQuote,
     );
@@ -198,16 +243,24 @@ class ContentCubit extends Cubit<ContentState> {
     await refresh();
   }
 
-  /// Get random quote that changes on each call
+  /// Get random quote that changes on each call - ENHANCED
   String getRandomQuoteForLanguage(String language) {
     if (_currentContent == null || _currentContent!.quotes.isEmpty) {
       return Quote.getDefault().getQuoteForLanguage(language);
     }
 
-    // Use current timestamp + random factor for better randomization
-    final randomSeed =
-        DateTime.now().millisecondsSinceEpoch + DateTime.now().microsecond;
-    final index = randomSeed % _currentContent!.quotes.length;
-    return _currentContent!.quotes[index].getQuoteForLanguage(language);
+    // Always get a different quote if possible
+    return getQuoteForLanguage(language);
+  }
+
+  /// Force get a new quote (for refresh button)
+  String getNewQuoteForLanguage(String language) {
+    log('🎯 GETTING NEW QUOTE FOR LANGUAGE: $language');
+
+    // Clear cache to force new selection
+    _cachedQuote = null;
+    _cachedLanguage = null;
+
+    return getQuoteForLanguage(language);
   }
 }

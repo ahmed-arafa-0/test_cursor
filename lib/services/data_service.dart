@@ -6,16 +6,13 @@ import 'package:intl/intl.dart';
 import '../models/data_models.dart';
 
 class DataService {
-  // Google Sheets Configuration - FIXED GID MAPPING
+  // Google Sheets Configuration - CORRECT GIDs
   static const String _spreadsheetId =
       '1mxAn5hS4bk_bX3_dwFERS_vpgnMj3dgN0bec3TRXDtA';
-
-  // SWAPPED: Based on your logs, the GIDs seem to be mixed up
-  static const String _gidQuotes =
-      '0'; // CHANGED: This likely has your 9 quotes
-  static const String _gidMusic = '191122548'; // This has 3 rows (correct)
-  static const String _gidPictures = '27390536'; // This has 1 row (correct)
-  static const String _gidVideos = '1813209632'; // CHANGED: Try this for videos
+  static const String _gidQuotes = '0'; // Quotes sheet
+  static const String _gidMusic = '191122548'; // Music sheet
+  static const String _gidPictures = '27390536'; // Pictures sheet
+  static const String _gidVideos = '1813209632'; // Videos sheet
 
   // Supabase Configuration
   static const String _supabaseUrl = 'https://twwvmidlorzkijbneeee.supabase.co';
@@ -26,22 +23,16 @@ class DataService {
   static final Map<String, List<Map<String, String>>> _cache = {};
   static DateTime? _lastCacheUpdate;
 
-  /// Fetch data from Google Sheet by GID
+  /// Fetch data from Google Sheet by GID with DETAILED LOGGING
   static Future<List<Map<String, String>>> _fetchSheetByGid(String gid) async {
     try {
-      // Check cache first (valid for 5 minutes)
-      final cacheKey = 'sheet_$gid';
-      if (_cache.containsKey(cacheKey) &&
-          _lastCacheUpdate != null &&
-          DateTime.now().difference(_lastCacheUpdate!).inMinutes < 5) {
-        log('Using cached data for GID: $gid');
-        return _cache[cacheKey]!;
-      }
-
+      // FORCE REFRESH: Don't use cache for debugging
       final url =
           'https://docs.google.com/spreadsheets/d/$_spreadsheetId/export?format=csv&gid=$gid';
 
-      log('Fetching Google Sheet data from GID: $gid');
+      log('🔍 DEBUGGING: Fetching Google Sheet data from GID: $gid');
+      log('🔍 DEBUGGING: URL: $url');
+
       final response = await http
           .get(
             Uri.parse(url),
@@ -53,69 +44,128 @@ class DataService {
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        log('Failed to fetch sheet GID $gid: ${response.statusCode}');
+        log('❌ Failed to fetch sheet GID $gid: ${response.statusCode}');
         return [];
       }
 
       final csvText = utf8.decode(response.bodyBytes);
+      log('🔍 DEBUGGING: Raw CSV length: ${csvText.length} characters');
+      log(
+        '🔍 DEBUGGING: First 200 chars of CSV: ${csvText.length > 200 ? csvText.substring(0, 200) : csvText}',
+      );
+
       final rows = const CsvToListConverter(eol: '\n').convert(csvText);
 
+      log('🔍 DEBUGGING: Total CSV rows parsed: ${rows.length}');
+
       if (rows.isEmpty || rows.length < 2) {
-        log('No data found in sheet GID: $gid');
+        log('❌ No data found in sheet GID: $gid');
         return [];
       }
 
       // Process headers and data
       final headers = rows.first.map((h) => h.toString().trim()).toList();
-      final dataRows = rows.skip(1);
+      log('🔍 DEBUGGING: Headers found: $headers');
 
-      final result = dataRows.map((row) {
+      final dataRows = rows.skip(1).toList();
+      log(
+        '🔍 DEBUGGING: Data rows count (excluding header): ${dataRows.length}',
+      );
+
+      final result = <Map<String, String>>[];
+
+      for (int i = 0; i < dataRows.length; i++) {
+        final row = dataRows[i];
         final map = <String, String>{};
-        for (var i = 0; i < headers.length; i++) {
-          final header = headers[i];
-          final value = i < row.length ? row[i].toString().trim() : '';
+
+        for (var j = 0; j < headers.length; j++) {
+          final header = headers[j];
+          final value = j < row.length ? row[j].toString().trim() : '';
           map[header] = value;
         }
-        return map;
-      }).toList();
 
-      // Cache the result
-      _cache[cacheKey] = result;
-      _lastCacheUpdate = DateTime.now();
+        result.add(map);
+        final englishQuote = map['English Quote'] ?? '';
+        final preview = englishQuote.isNotEmpty
+            ? englishQuote.substring(
+                0,
+                englishQuote.length < 50 ? englishQuote.length : 50,
+              )
+            : 'N/A';
+        log(
+          '🔍 DEBUGGING Row ${i + 1}: Date="${map['Date']}", English="$preview..."',
+        );
+      }
 
-      log('Successfully fetched ${result.length} rows from GID: $gid');
+      log('✅ Successfully fetched ${result.length} rows from GID: $gid');
       return result;
     } catch (e, stackTrace) {
-      log('Error fetching sheet GID $gid: $e', stackTrace: stackTrace);
+      log('❌ Error fetching sheet GID $gid: $e', stackTrace: stackTrace);
       return [];
     }
   }
 
-  /// Get daily content for a specific date - FIXED to load ALL rows for today
+  /// Get daily content for a specific date - ENHANCED DEBUG VERSION
   static Future<DailyContent> getDailyContent([DateTime? targetDate]) async {
     try {
       final date = targetDate ?? DateTime.now();
       final dateString = DateFormat('yyyy-MM-dd').format(date);
 
-      log('Loading daily content for date: $dateString');
+      log('🎯 LOADING DAILY CONTENT FOR: $dateString');
 
-      // Fetch all sheets in parallel
-      final results = await Future.wait([
-        _fetchSheetByGid(_gidQuotes),
-        _fetchSheetByGid(_gidMusic),
-        _fetchSheetByGid(_gidPictures),
-        _fetchSheetByGid(_gidVideos),
-      ]);
+      // Fetch quotes sheet with detailed logging
+      final quotesData = await _fetchSheetByGid(_gidQuotes);
 
-      final quotesData = results[0];
-      final musicData = results[1];
-      final picturesData = results[2];
-      final videosData = results[3];
+      log('🔍 DEBUGGING: All quotes data received: ${quotesData.length} rows');
 
-      // FIXED: Filter ALL rows for the specific date (not just first one)
-      final todayQuotes = quotesData
-          .where((row) => row['Date'] == dateString)
-          .toList();
+      // Show all dates found in quotes
+      final allDates = quotesData.map((row) => row['Date']).toSet();
+      log('🔍 DEBUGGING: All dates found in quotes: $allDates');
+
+      // Filter quotes for the specific date
+      final todayQuotes = quotesData.where((row) {
+        final rowDate = row['Date']?.trim();
+        log('🔍 DEBUGGING: Comparing "$rowDate" with "$dateString"');
+        return rowDate == dateString;
+      }).toList();
+
+      log('🎯 FOUND ${todayQuotes.length} QUOTES FOR $dateString');
+
+      // Show each quote found
+      for (int i = 0; i < todayQuotes.length; i++) {
+        final quote = todayQuotes[i];
+        log(
+          '🎯 Quote ${i + 1}: English="${quote['English Quote']}", Arabic="${quote['Arabic Quote']}"',
+        );
+      }
+
+      // Parse ALL quotes for today
+      List<Quote> quotes = [];
+      for (int i = 0; i < todayQuotes.length; i++) {
+        final row = todayQuotes[i];
+        try {
+          final quote = Quote.fromGoogleSheet(row);
+          quotes.add(quote);
+          log(
+            '✅ Successfully parsed quote ${i + 1}: "${quote.englishQuote.substring(0, 30)}..."',
+          );
+        } catch (e) {
+          log('❌ Error parsing quote ${i + 1}: $e');
+          log('❌ Row data: $row');
+        }
+      }
+
+      // If no quotes for today, use default
+      if (quotes.isEmpty) {
+        quotes.add(Quote.getDefault());
+        log('⚠️ No valid quotes found for $dateString, using default');
+      }
+
+      // Quick fetch other data (without detailed logging)
+      final musicData = await _fetchSheetByGid(_gidMusic);
+      final picturesData = await _fetchSheetByGid(_gidPictures);
+      final videosData = await _fetchSheetByGid(_gidVideos);
+
       final todayMusic = musicData
           .where((row) => row['Date'] == dateString)
           .toList();
@@ -126,30 +176,7 @@ class DataService {
           .where((row) => row['Date'] == dateString)
           .toList();
 
-      log(
-        'Found for $dateString: ${todayQuotes.length} quotes, ${todayMusic.length} music, ${todayPictures.length} pictures, ${todayVideos.length} videos',
-      );
-
-      // Parse ALL quotes for today (not just first one)
-      List<Quote> quotes = [];
-      for (final row in todayQuotes) {
-        try {
-          quotes.add(Quote.fromGoogleSheet(row));
-          log(
-            'Parsed quote: ${row['English Quote']?.substring(0, 30) ?? 'No English quote'}...',
-          );
-        } catch (e) {
-          log('Error parsing quote: $e');
-        }
-      }
-
-      // If no quotes for today, use default
-      if (quotes.isEmpty) {
-        quotes.add(Quote.getDefault());
-        log('No quotes found for $dateString, using default');
-      }
-
-      // Parse ALL music for today
+      // Parse other data
       List<Music> musicList = [];
       for (final row in todayMusic) {
         try {
@@ -158,11 +185,8 @@ class DataService {
           log('Error parsing music: $e');
         }
       }
-      if (musicList.isEmpty) {
-        musicList.add(Music.getDefault());
-      }
+      if (musicList.isEmpty) musicList.add(Music.getDefault());
 
-      // Parse ALL pictures for today
       List<Picture> pictureList = [];
       for (final row in todayPictures) {
         try {
@@ -171,11 +195,8 @@ class DataService {
           log('Error parsing picture: $e');
         }
       }
-      if (pictureList.isEmpty) {
-        pictureList.add(Picture.getDefault());
-      }
+      if (pictureList.isEmpty) pictureList.add(Picture.getDefault());
 
-      // Parse ALL videos for today
       List<VideoAsset> videoList = [];
       for (final row in todayVideos) {
         try {
@@ -184,35 +205,33 @@ class DataService {
           log('Error parsing video: $e');
         }
       }
-      if (videoList.isEmpty) {
-        videoList.add(VideoAsset.getDefault());
-      }
+      if (videoList.isEmpty) videoList.add(VideoAsset.getDefault());
 
-      // Create daily content with ALL data
+      // Create daily content
       final dailyContent = DailyContent(
         date: date,
-        quotes: quotes, // Changed to support multiple quotes
+        quotes: quotes,
         musicList: musicList,
         pictureList: pictureList,
         videoList: videoList,
       );
 
       log(
-        'Successfully loaded daily content: ${quotes.length} quotes, ${musicList.length} music, ${pictureList.length} pictures, ${videoList.length} videos',
+        '🚀 FINAL RESULT: ${quotes.length} quotes, ${musicList.length} music, ${pictureList.length} pictures, ${videoList.length} videos',
       );
 
       return dailyContent;
     } catch (e, stackTrace) {
-      log('Error loading daily content: $e', stackTrace: stackTrace);
+      log('❌ Error loading daily content: $e', stackTrace: stackTrace);
       return DailyContent.getDefault();
     }
   }
 
-  /// Clear cache (useful for testing) - ENHANCED for refresh button
+  /// Clear cache - FORCE FRESH DATA
   static void clearCache() {
     _cache.clear();
     _lastCacheUpdate = null;
-    log('Data cache cleared - fresh data will be fetched');
+    log('🔄 Cache cleared - will fetch fresh data');
   }
 
   /// Test network connectivity
@@ -269,7 +288,7 @@ class DataService {
     }
   }
 
-  /// Get content for date range (useful for preloading)
+  /// Get content for date range
   static Future<Map<String, DailyContent>> getContentRange(
     DateTime startDate,
     DateTime endDate,
@@ -287,16 +306,14 @@ class DataService {
     return contentMap;
   }
 
-  /// Initialize service (call this at app startup)
+  /// Initialize service
   static Future<void> initialize() async {
     log('Initializing DataService...');
 
-    // Test connection
     final hasConnection = await testConnection();
     log('Network connection: ${hasConnection ? 'Available' : 'Not available'}');
 
     if (hasConnection) {
-      // Preload today's content
       await getDailyContent();
       log('DataService initialized successfully');
     } else {

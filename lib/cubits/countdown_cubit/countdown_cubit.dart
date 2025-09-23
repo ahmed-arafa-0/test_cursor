@@ -77,11 +77,11 @@ class CountdownCubit extends Cubit<CountdownState> {
       // Calculate difference
       final difference = targetCairo.difference(nowCairo);
 
-      log('Current Cairo time: $nowCairo');
-      log('Target Cairo time: $targetCairo');
-      log(
-        'Difference: ${difference.inDays} days, ${difference.inHours % 24} hours, ${difference.inMinutes % 60} minutes',
-      );
+      // log('Current Cairo time: $nowCairo');
+      // log('Target Cairo time: $targetCairo');
+      // log(
+      // 'Difference: ${difference.inDays} days, ${difference.inHours % 24} hours, ${difference.inMinutes % 60} minutes',
+      // );
 
       if (difference.isNegative) {
         // Birthday has passed

@@ -24,19 +24,19 @@ class Quote {
     );
   }
 
-  // IMPROVED quote cleaning for your sheet format
   static String _cleanQuote(String quote) {
-    // Skip quotes that are just placeholders or empty
-    if (quote.trim().isEmpty ||
-        quote.trim() == 'XX' ||
-        quote.trim() == 'bane' ||
-        quote.trim() == 'banee' ||
-        quote.trim().startsWith('όμορφος') ||
-        quote.trim().startsWith('عرفة') ||
-        quote.trim().length < 3) {
+    final trimmedQuote = quote.trim();
+
+    // Skip quotes that are clearly invalid/placeholder
+    if (trimmedQuote.isEmpty ||
+        trimmedQuote == 'XX' ||
+        trimmedQuote == 'bane' ||
+        trimmedQuote == 'banee' ||
+        trimmedQuote.length < 3) {
       return ''; // Return empty for invalid quotes
     }
 
+    // Only clean, don't reject based on content
     return quote
         .replaceAll('"', '') // Remove quotes
         .replaceAll('*', '') // Remove asterisks
@@ -193,7 +193,8 @@ class DailyContent {
   final List<VideoAsset> videoList;
 
   // FIXED: Store selected quote to prevent changing every second
-  Quote? _selectedQuote;
+  // Quote? _selectedQuote;
+  int? _selectedQuoteIndex;
 
   DailyContent({
     required this.date,
@@ -205,27 +206,31 @@ class DailyContent {
 
   // FIXED: Get quote that stays the same during session
   Quote getSelectedQuote() {
-    if (_selectedQuote != null) return _selectedQuote!;
+    if (_selectedQuoteIndex != null) {
+      return quotes[_selectedQuoteIndex!];
+    }
 
     if (quotes.isEmpty) {
-      _selectedQuote = Quote.getDefault();
-      return _selectedQuote!;
+      return Quote.getDefault();
     }
 
     // Filter out invalid quotes
     final validQuotes = quotes.where((quote) => quote.isValid()).toList();
 
     if (validQuotes.isEmpty) {
-      _selectedQuote = Quote.getDefault();
-      return _selectedQuote!;
+      return Quote.getDefault();
     }
 
     // Use date-based seed for consistent selection during the day
     final dateSeed = date.year * 10000 + date.month * 100 + date.day;
     final index = dateSeed % validQuotes.length;
-    _selectedQuote = validQuotes[index];
+    _selectedQuoteIndex = index;
 
-    return _selectedQuote!;
+    return validQuotes[index];
+  }
+
+  void refreshQuoteSelection() {
+    _selectedQuoteIndex = null; // This will force a new selection next time
   }
 
   // FIXED: Get quote for specific language (stable, doesn't change)

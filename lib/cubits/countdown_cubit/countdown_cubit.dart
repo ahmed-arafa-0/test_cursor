@@ -72,7 +72,7 @@ class CountdownCubit extends Cubit<CountdownState> {
       final nowCairo = _getCairoTime();
 
       // Create target date in Cairo timezone (September 26, 2025 at midnight Cairo time)
-      final targetCairo = DateTime(2025, 9, 25, 23, 40, 0);
+      final targetCairo = DateTime(2025, 9, 26, 0, 0, 0);
 
       // Calculate difference
       final difference = targetCairo.difference(nowCairo);

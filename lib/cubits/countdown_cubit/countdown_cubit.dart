@@ -29,7 +29,7 @@ class CountdownCubit extends Cubit<CountdownState> {
       );
     } else {
       // Default: Veuolla's birthday September 26, 2025 at midnight Cairo time
-      _targetDate = DateTime(2025, 9, 25, 0, 0, 0);
+      _targetDate = DateTime(2025, 9, 25, 22, 55, 0);
     }
 
     log('Target date set to: $_targetDate (Cairo time)');
@@ -72,7 +72,7 @@ class CountdownCubit extends Cubit<CountdownState> {
       final nowCairo = _getCairoTime();
 
       // Create target date in Cairo timezone (September 26, 2025 at midnight Cairo time)
-      final targetCairo = DateTime(2025, 9, 25, 0, 0, 0);
+      final targetCairo = DateTime(2025, 9, 25, 22, 55, 0);
 
       // Calculate difference
       final difference = targetCairo.difference(nowCairo);

@@ -14,6 +14,7 @@ import 'cubits/background_cubit/background_cubit.dart';
 // Import widgets
 import 'widgets/content/complete_counter_widget.dart';
 import 'widgets/buttons/enhanced_buttons.dart';
+import 'widgets/celebration/fullscreen_celebration.dart';
 
 void main() {
   runApp(const VeoullaApp());
@@ -789,6 +790,26 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                 ),
               ),
             ),
+          BlocBuilder<CountdownCubit, CountdownState>(
+            builder: (context, countdownState) {
+              final shouldShowCelebration =
+                  countdownState is CountdownFinished ||
+                  countdownState is CountdownCelebration;
+
+              return BlocBuilder<LanguageCubit, LanguageState>(
+                builder: (context, languageState) {
+                  final currentLanguage = context
+                      .read<LanguageCubit>()
+                      .currentLanguage;
+
+                  return FullscreenBirthdayCelebration(
+                    isActive: shouldShowCelebration,
+                    language: currentLanguage, // 👈 Pass current language
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );

@@ -39,37 +39,50 @@
   <!-- Web App Manifest -->
   <link rel="manifest" href="manifest.json">
 
-  <!-- ADD THIS COMPLETE CSS SECTION TO YOUR web/index.html FILE -->
-<!-- Place this inside the <head> section, after the existing <style> tag or create a new one -->
+<!-- ENHANCED CSS - Add this to your web/index.html in the <style> section -->
 
 <style>
-  /* 🎊 BIRTHDAY CELEBRATION ANIMATIONS 🎊 */
+  /* 🎊 ENHANCED BIRTHDAY CELEBRATION ANIMATIONS 🎊 */
   
-  /* Main falling animation for PNG items */
+  /* Main falling animation for PNG items - FIXED */
   @keyframes fallAndRotate {
     0% {
       transform: translateY(-100px) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    25% {
+      opacity: 1;
+      transform: translateY(25vh) rotate(90deg) scale(1.1);
+    }
+    50% {
+      opacity: 0.9;
+      transform: translateY(50vh) rotate(180deg) scale(0.9);
+    }
+    75% {
       opacity: 0.8;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
+      transform: translateY(75vh) rotate(270deg) scale(1.05);
     }
     100% {
-      transform: translateY(100vh) rotate(720deg) scale(0.8);
+      transform: translateY(110vh) rotate(360deg) scale(0.8);
       opacity: 0.6;
     }
   }
 
   /* Fade out animation */
   @keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* Confetti falling animation */
+  @keyframes confettiFall {
     0% {
+      transform: translateY(-10px) rotate(0deg);
       opacity: 1;
     }
     100% {
-      opacity: 0;
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0.3;
     }
   }
 
@@ -85,75 +98,75 @@
     overflow: hidden;
   }
 
-  /* PNG falling animation styles */
+  /* PNG falling animation styles - ENHANCED */
   .falling-png {
     position: absolute;
     animation: fallAndRotate 6s linear forwards;
     pointer-events: none;
+    will-change: transform, opacity;
   }
 
   /* Different animation speeds for variety */
   .falling-png.slow {
-    animation-duration: 8s;
+    animation: fallAndRotate 8s linear forwards;
   }
 
   .falling-png.fast {
-    animation-duration: 4s;
+    animation: fallAndRotate 4s linear forwards;
   }
 
   .falling-png.medium {
-    animation-duration: 6s;
+    animation: fallAndRotate 6s linear forwards;
   }
 
-  /* Confetti canvas styles */
-  .confetti-canvas {
+  /* Confetti particles - ENHANCED */
+  .confetti-particle {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: confettiFall 4s linear forwards;
     pointer-events: none;
-    z-index: 999;
+    will-change: transform, opacity;
   }
 
-  /* 🌟 BIRTHDAY TITLE GLOWING EFFECT 🌟 */
+  /* Different confetti colors */
+  .confetti-pink { background-color: #FF69B4; }
+  .confetti-gold { background-color: #FFD700; }
+  .confetti-purple { background-color: #9370DB; }
+  .confetti-blue { background-color: #40E0D0; }
+  .confetti-orange { background-color: #FF8C00; }
+
+  /* 🌟 BIRTHDAY TITLE GLOWING EFFECT - ENHANCED 🌟 */
   @keyframes birthdayTitleGlow {
     0%, 100% {
       text-shadow: 
         0 0 10px #FFD700,
         0 0 20px #FF69B4,
         0 0 30px #FF1493,
-        0 0 40px #9370DB;
+        0 0 40px #9370DB,
+        0 0 50px #40E0D0;
     }
-    25% {
+    33% {
       text-shadow: 
-        0 0 15px #FFD700,
-        0 0 25px #FF69B4,
-        0 0 35px #FF1493,
-        0 0 45px #9370DB,
+        0 0 15px #FF69B4,
+        0 0 25px #FFD700,
+        0 0 35px #9370DB,
+        0 0 45px #FF1493,
         0 0 55px #FF6347;
     }
-    50% {
+    66% {
       text-shadow: 
-        0 0 20px #FFD700,
-        0 0 30px #FF69B4,
-        0 0 40px #FF1493,
-        0 0 50px #9370DB,
-        0 0 60px #FF6347,
-        0 0 70px #40E0D0;
-    }
-    75% {
-      text-shadow: 
-        0 0 15px #FFD700,
-        0 0 25px #FF69B4,
-        0 0 35px #FF1493,
-        0 0 45px #9370DB,
-        0 0 55px #FF6347;
+        0 0 20px #40E0D0,
+        0 0 30px #9370DB,
+        0 0 40px #FFD700,
+        0 0 50px #FF69B4,
+        0 0 60px #FF8C00;
     }
   }
 
   .birthday-title {
-    animation: birthdayTitleGlow 2s ease-in-out infinite;
+    animation: birthdayTitleGlow 3s ease-in-out infinite;
   }
 
   /* ✨ SPARKLE EFFECTS ✨ */
@@ -164,154 +177,279 @@
     }
     50% { 
       opacity: 1; 
-      transform: scale(1.2) rotate(180deg); 
+      transform: scale(1.3) rotate(180deg); 
     }
   }
 
   .celebration-sparkle {
-    animation: sparkle 1.5s ease-in-out infinite;
+    animation: sparkle 2s ease-in-out infinite;
   }
 
   /* 🌈 RAINBOW BORDER EFFECT 🌈 */
   @keyframes rainbowBorder {
-    0% { border-color: #FF69B4; box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
-    16.67% { border-color: #FFD700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-    33.33% { border-color: #FF1493; box-shadow: 0 0 20px rgba(255, 20, 147, 0.5); }
-    50% { border-color: #9370DB; box-shadow: 0 0 20px rgba(147, 112, 219, 0.5); }
-    66.67% { border-color: #40E0D0; box-shadow: 0 0 20px rgba(64, 224, 208, 0.5); }
-    83.33% { border-color: #FF8C00; box-shadow: 0 0 20px rgba(255, 140, 0, 0.5); }
-    100% { border-color: #FF69B4; box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+    0% { 
+      border-color: #FF69B4; 
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.6), inset 0 0 20px rgba(255, 105, 180, 0.1); 
+    }
+    16.67% { 
+      border-color: #FFD700; 
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.1); 
+    }
+    33.33% { 
+      border-color: #FF1493; 
+      box-shadow: 0 0 20px rgba(255, 20, 147, 0.6), inset 0 0 20px rgba(255, 20, 147, 0.1); 
+    }
+    50% { 
+      border-color: #9370DB; 
+      box-shadow: 0 0 20px rgba(147, 112, 219, 0.6), inset 0 0 20px rgba(147, 112, 219, 0.1); 
+    }
+    66.67% { 
+      border-color: #40E0D0; 
+      box-shadow: 0 0 20px rgba(64, 224, 208, 0.6), inset 0 0 20px rgba(64, 224, 208, 0.1); 
+    }
+    83.33% { 
+      border-color: #FF8C00; 
+      box-shadow: 0 0 20px rgba(255, 140, 0, 0.6), inset 0 0 20px rgba(255, 140, 0, 0.1); 
+    }
+    100% { 
+      border-color: #FF69B4; 
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.6), inset 0 0 20px rgba(255, 105, 180, 0.1); 
+    }
   }
 
   .celebration-container {
-    animation: rainbowBorder 3s linear infinite;
+    animation: rainbowBorder 4s linear infinite;
   }
 
   /* 💖 FLOATING HEARTS ANIMATION 💖 */
   @keyframes floatingHearts {
     0% {
-      transform: translateY(0) rotate(0deg);
+      transform: translateY(0) rotate(0deg) scale(1);
       opacity: 1;
     }
+    25% {
+      transform: translateY(-25vh) rotate(90deg) scale(1.2);
+      opacity: 0.9;
+    }
+    50% {
+      transform: translateY(-50vh) rotate(180deg) scale(0.8);
+      opacity: 0.7;
+    }
+    75% {
+      transform: translateY(-75vh) rotate(270deg) scale(1.1);
+      opacity: 0.5;
+    }
     100% {
-      transform: translateY(-100vh) rotate(360deg);
+      transform: translateY(-100vh) rotate(360deg) scale(0.6);
       opacity: 0;
     }
   }
 
   .floating-heart {
     position: absolute;
-    animation: floatingHearts 4s linear infinite;
-    font-size: 20px;
+    animation: floatingHearts 5s linear infinite;
+    font-size: 24px;
     pointer-events: none;
+    will-change: transform, opacity;
   }
 
   /* 🎆 CONFETTI BURST EFFECT 🎆 */
   @keyframes confettiBurst {
     0% {
-      transform: scale(0) rotate(0deg);
+      transform: scale(0) rotate(0deg) translateY(0);
       opacity: 1;
     }
+    25% {
+      transform: scale(1.2) rotate(90deg) translateY(-20px);
+      opacity: 0.9;
+    }
     50% {
-      transform: scale(1) rotate(180deg);
-      opacity: 0.8;
+      transform: scale(1) rotate(180deg) translateY(-40px);
+      opacity: 0.7;
+    }
+    75% {
+      transform: scale(0.8) rotate(270deg) translateY(-60px);
+      opacity: 0.4;
     }
     100% {
-      transform: scale(0.5) rotate(360deg);
+      transform: scale(0.3) rotate(360deg) translateY(-80px);
       opacity: 0;
     }
   }
 
-  .confetti-particle {
+  .confetti-burst {
     position: absolute;
-    animation: confettiBurst 2s ease-out forwards;
+    animation: confettiBurst 3s ease-out forwards;
   }
 
   /* 🌟 STAR TWINKLE EFFECT 🌟 */
   @keyframes starTwinkle {
     0%, 100% {
-      opacity: 0.3;
-      transform: scale(1);
+      opacity: 0.4;
+      transform: scale(1) rotate(0deg);
     }
     25% {
       opacity: 0.8;
-      transform: scale(1.1);
+      transform: scale(1.3) rotate(90deg);
     }
     50% {
       opacity: 1;
-      transform: scale(1.2);
+      transform: scale(1.5) rotate(180deg);
     }
     75% {
       opacity: 0.8;
-      transform: scale(1.1);
+      transform: scale(1.2) rotate(270deg);
     }
   }
 
   .star-twinkle {
-    animation: starTwinkle 2s ease-in-out infinite;
+    animation: starTwinkle 2.5s ease-in-out infinite;
   }
 
   /* 🎪 CELEBRATION PULSE EFFECT 🎪 */
   @keyframes celebrationPulse {
     0% {
       transform: scale(1);
-      filter: brightness(1);
+      filter: brightness(1) saturate(1);
+    }
+    25% {
+      transform: scale(1.02);
+      filter: brightness(1.1) saturate(1.2);
     }
     50% {
       transform: scale(1.05);
-      filter: brightness(1.2);
+      filter: brightness(1.2) saturate(1.4);
+    }
+    75% {
+      transform: scale(1.02);
+      filter: brightness(1.1) saturate(1.2);
     }
     100% {
       transform: scale(1);
-      filter: brightness(1);
+      filter: brightness(1) saturate(1);
     }
   }
 
   .celebration-pulse {
-    animation: celebrationPulse 2s ease-in-out infinite;
+    animation: celebrationPulse 3s ease-in-out infinite;
   }
 
   /* 🎵 DANCING TEXT EFFECT 🎵 */
   @keyframes danceText {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    25% { transform: translateY(-5px) rotate(1deg); }
-    50% { transform: translateY(0) rotate(0deg); }
-    75% { transform: translateY(-3px) rotate(-1deg); }
+    0%, 100% { 
+      transform: translateY(0) rotate(0deg) scale(1); 
+    }
+    25% { 
+      transform: translateY(-8px) rotate(2deg) scale(1.05); 
+    }
+    50% { 
+      transform: translateY(0) rotate(0deg) scale(1); 
+    }
+    75% { 
+      transform: translateY(-5px) rotate(-2deg) scale(1.02); 
+    }
   }
 
   .dance-text {
-    animation: danceText 1.5s ease-in-out infinite;
+    animation: danceText 2s ease-in-out infinite;
   }
 
   /* 🌊 WAVE EFFECT 🌊 */
   @keyframes wave {
-    0% { transform: translateX(-100px); }
-    50% { transform: translateX(0px); }
-    100% { transform: translateX(100px); }
+    0% { 
+      transform: translateX(-100px) rotate(0deg); 
+      opacity: 0;
+    }
+    25% {
+      transform: translateX(-50px) rotate(90deg);
+      opacity: 0.7;
+    }
+    50% { 
+      transform: translateX(0px) rotate(180deg); 
+      opacity: 1;
+    }
+    75% {
+      transform: translateX(50px) rotate(270deg);
+      opacity: 0.7;
+    }
+    100% { 
+      transform: translateX(100px) rotate(360deg); 
+      opacity: 0;
+    }
   }
 
   .wave-effect {
-    animation: wave 3s ease-in-out infinite;
+    animation: wave 4s ease-in-out infinite;
   }
 
   /* 🎨 GRADIENT SHIFT EFFECT 🎨 */
   @keyframes gradientShift {
     0% { background-position: 0% 50%; }
+    25% { background-position: 50% 25%; }
     50% { background-position: 100% 50%; }
+    75% { background-position: 50% 75%; }
     100% { background-position: 0% 50%; }
   }
 
   .gradient-shift {
-    background: linear-gradient(-45deg, #FF69B4, #FFD700, #FF1493, #9370DB);
-    background-size: 400% 400%;
-    animation: gradientShift 4s ease infinite;
+    background: linear-gradient(-45deg, #FF69B4, #FFD700, #FF1493, #9370DB, #40E0D0, #FF8C00);
+    background-size: 600% 600%;
+    animation: gradientShift 5s ease infinite;
   }
 
   /* 🎊 CELEBRATION SPECIFIC STYLES 🎊 */
+  .celebration-active {
+    position: relative;
+    overflow: visible;
+  }
+
   .celebration-active .birthday-title {
-    animation: birthdayTitleGlow 2s ease-in-out infinite,
-               celebrationPulse 2s ease-in-out infinite,
-               danceText 1.5s ease-in-out infinite;
+    animation: 
+      birthdayTitleGlow 3s ease-in-out infinite,
+      celebrationPulse 3s ease-in-out infinite,
+      danceText 2s ease-in-out infinite;
+  }
+
+  .celebration-active::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: linear-gradient(-45deg, #FF69B4, #FFD700, #FF1493, #9370DB);
+    background-size: 400% 400%;
+    animation: gradientShift 4s ease infinite;
+    border-radius: inherit;
+    z-index: -1;
+  }
+
+  /* 🎭 CELEBRATION EMOJI EFFECTS 🎭 */
+  @keyframes emojiSpin {
+    0% { 
+      transform: rotate(0deg) scale(1); 
+      opacity: 0.8;
+    }
+    25% { 
+      transform: rotate(90deg) scale(1.2); 
+      opacity: 1;
+    }
+    50% { 
+      transform: rotate(180deg) scale(0.9); 
+      opacity: 0.9;
+    }
+    75% { 
+      transform: rotate(270deg) scale(1.1); 
+      opacity: 1;
+    }
+    100% { 
+      transform: rotate(360deg) scale(1); 
+      opacity: 0.8;
+    }
+  }
+
+  .celebration-emoji {
+    animation: emojiSpin 3s linear infinite;
   }
 
   /* Mobile responsive adjustments */
@@ -321,12 +459,18 @@
     }
     
     .floating-heart {
-      font-size: 16px;
-      animation-duration: 3s;
+      font-size: 18px;
+      animation-duration: 4s;
     }
     
     .birthday-title {
-      animation-duration: 1.5s;
+      animation-duration: 2s;
+    }
+    
+    .confetti-particle {
+      width: 6px;
+      height: 6px;
+      animation-duration: 3s;
     }
   }
 
@@ -334,14 +478,44 @@
   @media (prefers-reduced-motion: reduce) {
     .falling-png,
     .floating-heart,
-    .confetti-particle {
+    .confetti-particle,
+    .confetti-burst {
       animation-duration: 1s;
+      animation-iteration-count: 1;
     }
     
     .birthday-title {
       animation: none;
-      text-shadow: 0 0 10px #FFD700;
+      text-shadow: 0 0 15px #FFD700, 0 0 25px #FF69B4;
     }
+    
+    .celebration-pulse,
+    .dance-text,
+    .wave-effect {
+      animation: none;
+    }
+  }
+
+  /* 🎪 CELEBRATION CONTAINER GLOW */
+  .celebration-glow {
+    position: relative;
+  }
+
+  .celebration-glow::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: inherit;
+    padding: 3px;
+    background: linear-gradient(45deg, #FF69B4, #FFD700, #FF1493, #9370DB, #40E0D0);
+    background-size: 400% 400%;
+    animation: gradientShift 4s ease infinite;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: xor;
+    -webkit-mask-composite: xor;
   }
 </style>
 

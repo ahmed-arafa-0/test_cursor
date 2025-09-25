@@ -5,7 +5,7 @@ import '../../cubits/countdown_cubit/countdown_cubit.dart';
 import '../../cubits/language_cubit/language_cubit.dart';
 import '../../cubits/content_cubit/content_cubit.dart';
 import '../../utils/font_manager.dart';
-import '../celebration/birthday_celebration.dart';
+import '../celebration/simple_celebration.dart';
 
 class CompleteCounterWidget extends StatefulWidget {
   const CompleteCounterWidget({super.key});
@@ -74,25 +74,19 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
             builder: (context, countdownState) {
               // 🎉 BIRTHDAY CELEBRATION MODE! 🎉
               if (countdownState is CountdownCelebration) {
-                return Stack(
-                  children: [
-                    // Birthday celebration message
-                    Center(
-                      child: _buildCelebrationMessage(
-                        countdownState,
-                        language,
-                        screenWidth,
-                        isRTL,
-                      ),
-                    ),
-                    // 🎊 CONTINUOUS CELEBRATION ANIMATION - NEVER STOPS!
-                    BirthdyCelebration(isActive: countdownState.isActive),
-                  ],
+                return Center(
+                  child: _buildCelebrationMessage(
+                    countdownState,
+                    language,
+                    screenWidth,
+                    isRTL,
+                  ),
                 );
               }
               // Handle other countdown states normally...
               else if (countdownState is CountdownFinished) {
-                return _buildBirthdayMessage(language, screenWidth, isRTL);
+                // return _buildBirthdayMessage(language, screenWidth, isRTL);
+                return Container();
               } else if (countdownState is CountdownFinalSeconds) {
                 _startPulseAnimation();
                 return _buildFinalCountdown(

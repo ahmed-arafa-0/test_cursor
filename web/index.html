@@ -18,7 +18,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Countdown for Vanilla">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -38,6 +38,312 @@
   
   <!-- Web App Manifest -->
   <link rel="manifest" href="manifest.json">
+
+  <!-- ADD THIS COMPLETE CSS SECTION TO YOUR web/index.html FILE -->
+<!-- Place this inside the <head> section, after the existing <style> tag or create a new one -->
+
+<style>
+  /* 🎊 BIRTHDAY CELEBRATION ANIMATIONS 🎊 */
+  
+  /* Main falling animation for PNG items */
+  @keyframes fallAndRotate {
+    0% {
+      transform: translateY(-100px) rotate(0deg) scale(1);
+      opacity: 0.8;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg) scale(0.8);
+      opacity: 0.6;
+    }
+  }
+
+  /* Fade out animation */
+  @keyframes fadeOut {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* Celebration overlay container */
+  .celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+  }
+
+  /* PNG falling animation styles */
+  .falling-png {
+    position: absolute;
+    animation: fallAndRotate 6s linear forwards;
+    pointer-events: none;
+  }
+
+  /* Different animation speeds for variety */
+  .falling-png.slow {
+    animation-duration: 8s;
+  }
+
+  .falling-png.fast {
+    animation-duration: 4s;
+  }
+
+  .falling-png.medium {
+    animation-duration: 6s;
+  }
+
+  /* Confetti canvas styles */
+  .confetti-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* 🌟 BIRTHDAY TITLE GLOWING EFFECT 🌟 */
+  @keyframes birthdayTitleGlow {
+    0%, 100% {
+      text-shadow: 
+        0 0 10px #FFD700,
+        0 0 20px #FF69B4,
+        0 0 30px #FF1493,
+        0 0 40px #9370DB;
+    }
+    25% {
+      text-shadow: 
+        0 0 15px #FFD700,
+        0 0 25px #FF69B4,
+        0 0 35px #FF1493,
+        0 0 45px #9370DB,
+        0 0 55px #FF6347;
+    }
+    50% {
+      text-shadow: 
+        0 0 20px #FFD700,
+        0 0 30px #FF69B4,
+        0 0 40px #FF1493,
+        0 0 50px #9370DB,
+        0 0 60px #FF6347,
+        0 0 70px #40E0D0;
+    }
+    75% {
+      text-shadow: 
+        0 0 15px #FFD700,
+        0 0 25px #FF69B4,
+        0 0 35px #FF1493,
+        0 0 45px #9370DB,
+        0 0 55px #FF6347;
+    }
+  }
+
+  .birthday-title {
+    animation: birthdayTitleGlow 2s ease-in-out infinite;
+  }
+
+  /* ✨ SPARKLE EFFECTS ✨ */
+  @keyframes sparkle {
+    0%, 100% { 
+      opacity: 0.3; 
+      transform: scale(1) rotate(0deg); 
+    }
+    50% { 
+      opacity: 1; 
+      transform: scale(1.2) rotate(180deg); 
+    }
+  }
+
+  .celebration-sparkle {
+    animation: sparkle 1.5s ease-in-out infinite;
+  }
+
+  /* 🌈 RAINBOW BORDER EFFECT 🌈 */
+  @keyframes rainbowBorder {
+    0% { border-color: #FF69B4; box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+    16.67% { border-color: #FFD700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+    33.33% { border-color: #FF1493; box-shadow: 0 0 20px rgba(255, 20, 147, 0.5); }
+    50% { border-color: #9370DB; box-shadow: 0 0 20px rgba(147, 112, 219, 0.5); }
+    66.67% { border-color: #40E0D0; box-shadow: 0 0 20px rgba(64, 224, 208, 0.5); }
+    83.33% { border-color: #FF8C00; box-shadow: 0 0 20px rgba(255, 140, 0, 0.5); }
+    100% { border-color: #FF69B4; box-shadow: 0 0 20px rgba(255, 105, 180, 0.5); }
+  }
+
+  .celebration-container {
+    animation: rainbowBorder 3s linear infinite;
+  }
+
+  /* 💖 FLOATING HEARTS ANIMATION 💖 */
+  @keyframes floatingHearts {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .floating-heart {
+    position: absolute;
+    animation: floatingHearts 4s linear infinite;
+    font-size: 20px;
+    pointer-events: none;
+  }
+
+  /* 🎆 CONFETTI BURST EFFECT 🎆 */
+  @keyframes confettiBurst {
+    0% {
+      transform: scale(0) rotate(0deg);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1) rotate(180deg);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(0.5) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .confetti-particle {
+    position: absolute;
+    animation: confettiBurst 2s ease-out forwards;
+  }
+
+  /* 🌟 STAR TWINKLE EFFECT 🌟 */
+  @keyframes starTwinkle {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(1);
+    }
+    25% {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+    75% {
+      opacity: 0.8;
+      transform: scale(1.1);
+    }
+  }
+
+  .star-twinkle {
+    animation: starTwinkle 2s ease-in-out infinite;
+  }
+
+  /* 🎪 CELEBRATION PULSE EFFECT 🎪 */
+  @keyframes celebrationPulse {
+    0% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+    50% {
+      transform: scale(1.05);
+      filter: brightness(1.2);
+    }
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+  }
+
+  .celebration-pulse {
+    animation: celebrationPulse 2s ease-in-out infinite;
+  }
+
+  /* 🎵 DANCING TEXT EFFECT 🎵 */
+  @keyframes danceText {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-5px) rotate(1deg); }
+    50% { transform: translateY(0) rotate(0deg); }
+    75% { transform: translateY(-3px) rotate(-1deg); }
+  }
+
+  .dance-text {
+    animation: danceText 1.5s ease-in-out infinite;
+  }
+
+  /* 🌊 WAVE EFFECT 🌊 */
+  @keyframes wave {
+    0% { transform: translateX(-100px); }
+    50% { transform: translateX(0px); }
+    100% { transform: translateX(100px); }
+  }
+
+  .wave-effect {
+    animation: wave 3s ease-in-out infinite;
+  }
+
+  /* 🎨 GRADIENT SHIFT EFFECT 🎨 */
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .gradient-shift {
+    background: linear-gradient(-45deg, #FF69B4, #FFD700, #FF1493, #9370DB);
+    background-size: 400% 400%;
+    animation: gradientShift 4s ease infinite;
+  }
+
+  /* 🎊 CELEBRATION SPECIFIC STYLES 🎊 */
+  .celebration-active .birthday-title {
+    animation: birthdayTitleGlow 2s ease-in-out infinite,
+               celebrationPulse 2s ease-in-out infinite,
+               danceText 1.5s ease-in-out infinite;
+  }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 600px) {
+    .falling-png {
+      animation-duration: 5s;
+    }
+    
+    .floating-heart {
+      font-size: 16px;
+      animation-duration: 3s;
+    }
+    
+    .birthday-title {
+      animation-duration: 1.5s;
+    }
+  }
+
+  /* High performance mode for slower devices */
+  @media (prefers-reduced-motion: reduce) {
+    .falling-png,
+    .floating-heart,
+    .confetti-particle {
+      animation-duration: 1s;
+    }
+    
+    .birthday-title {
+      animation: none;
+      text-shadow: 0 0 10px #FFD700;
+    }
+  }
+</style>
 
   <title>Veuolla Birthday Countdown</title>
   <link rel="manifest" href="manifest.json">

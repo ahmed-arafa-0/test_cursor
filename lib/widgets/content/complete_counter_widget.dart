@@ -5,6 +5,7 @@ import '../../cubits/countdown_cubit/countdown_cubit.dart';
 import '../../cubits/language_cubit/language_cubit.dart';
 import '../../cubits/content_cubit/content_cubit.dart';
 import '../../utils/font_manager.dart';
+import '../celebration/birthday_celebration.dart';
 
 class CompleteCounterWidget extends StatefulWidget {
   const CompleteCounterWidget({super.key});
@@ -71,8 +72,26 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
           textDirection: FontManager.getTextDirection(language),
           child: BlocBuilder<CountdownCubit, CountdownState>(
             builder: (context, countdownState) {
-              // Handle different countdown states
-              if (countdownState is CountdownFinished) {
+              // 🎉 BIRTHDAY CELEBRATION MODE! 🎉
+              if (countdownState is CountdownCelebration) {
+                return Stack(
+                  children: [
+                    // Birthday celebration message
+                    Center(
+                      child: _buildCelebrationMessage(
+                        countdownState,
+                        language,
+                        screenWidth,
+                        isRTL,
+                      ),
+                    ),
+                    // 🎊 CONTINUOUS CELEBRATION ANIMATION - NEVER STOPS!
+                    BirthdyCelebration(isActive: countdownState.isActive),
+                  ],
+                );
+              }
+              // Handle other countdown states normally...
+              else if (countdownState is CountdownFinished) {
                 return _buildBirthdayMessage(language, screenWidth, isRTL);
               } else if (countdownState is CountdownFinalSeconds) {
                 _startPulseAnimation();
@@ -106,6 +125,247 @@ class _CompleteCounterWidgetState extends State<CompleteCounterWidget>
         );
       },
     );
+  }
+
+  // 🎉 ADD THIS NEW METHOD for celebration message display
+  Widget _buildCelebrationMessage(
+    CountdownCelebration state,
+    String language,
+    double screenWidth,
+    bool isRTL,
+  ) {
+    final fontSize = FontManager.getResponsiveFontSize(
+      screenWidth: screenWidth,
+      baseFontSize: screenWidth < 600 ? 24 : 32,
+    );
+
+    return Container(
+      constraints: BoxConstraints(
+        maxWidth: screenWidth > 800 ? 700 : screenWidth * 0.9,
+        minHeight: 400,
+      ),
+      margin: EdgeInsets.symmetric(
+        horizontal: screenWidth < 400 ? 16 : 32,
+        vertical: 60,
+      ),
+      padding: EdgeInsets.all(screenWidth < 400 ? 24 : 32),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.pink.withOpacity(0.3),
+            Colors.purple.withOpacity(0.3),
+            Colors.orange.withOpacity(0.3),
+            Colors.yellow.withOpacity(0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.pink.withOpacity(0.3),
+            blurRadius: 30,
+            spreadRadius: 5,
+          ),
+          BoxShadow(
+            color: Colors.yellow.withOpacity(0.2),
+            blurRadius: 50,
+            spreadRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ✨ GLOWING BIRTHDAY MESSAGE
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 2,
+              ),
+            ),
+            child: Text(
+              state.birthdayMessage,
+              style:
+                  FontManager.applyWebOptimizations(
+                    FontManager.getTitleStyle(
+                      language: language,
+                      fontSize: fontSize,
+                      color: Colors.white,
+                    ),
+                  ).copyWith(
+                    // ✨ MAGICAL GLOWING EFFECT
+                    shadows: [
+                      Shadow(
+                        blurRadius: 10,
+                        color: Colors.yellow.withOpacity(0.9),
+                        offset: const Offset(0, 0),
+                      ),
+                      Shadow(
+                        blurRadius: 20,
+                        color: Colors.pink.withOpacity(0.7),
+                        offset: const Offset(2, 2),
+                      ),
+                      Shadow(
+                        blurRadius: 30,
+                        color: Colors.purple.withOpacity(0.5),
+                        offset: const Offset(-2, -2),
+                      ),
+                      Shadow(
+                        blurRadius: 40,
+                        color: Colors.orange.withOpacity(0.4),
+                        offset: const Offset(0, 0),
+                      ),
+                    ],
+                  ),
+              textAlign: TextAlign.center,
+              textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // 🎊 CELEBRATION STATUS INFO
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Main celebration status
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('🎊', style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'CELEBRATION MODE ACTIVE',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('🎊', style: TextStyle(fontSize: 24)),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                // Celebration details
+                Text(
+                  '✨ Confetti & Memories Falling Continuously ✨',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Never stops message
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    '💖 This celebration never ends! 💖',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // 📅 CELEBRATION START TIME
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.schedule, color: Colors.white60, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  'Celebration started: ${_formatCelebrationTime(state.celebrationStart)}',
+                  style: TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ♈ SIGNATURE
+          Align(
+            alignment: isRTL ? Alignment.centerLeft : Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                '♈ AR',
+                style: FontManager.getSignatureStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 🕒 ADD THIS HELPER METHOD for formatting celebration time
+  String _formatCelebrationTime(DateTime celebrationStart) {
+    final now = DateTime.now();
+    final duration = now.difference(celebrationStart);
+
+    if (duration.inMinutes < 1) {
+      return 'Just now!';
+    } else if (duration.inHours < 1) {
+      return '${duration.inMinutes} minute${duration.inMinutes == 1 ? '' : 's'} ago';
+    } else if (duration.inDays < 1) {
+      return '${duration.inHours} hour${duration.inHours == 1 ? '' : 's'} ago';
+    } else {
+      return '${duration.inDays} day${duration.inDays == 1 ? '' : 's'} ago';
+    }
   }
 
   Widget _buildMainCounter(

@@ -1,21 +1,29 @@
 {
   "hosting": {
     "public": "build/web",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [{"source": "**", "destination": "/index.html"}],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "!(/assets/**)",
+        "destination": "/index.html"
+      }
+    ],
     "headers": [
       {
-        "source": "/assets/**",
+        "source": "**/*.@(mp4|webm|ogg|avi|mov)",
         "headers": [
-          {"key": "Cross-Origin-Resource-Policy", "value": "cross-origin"},
-          {"key": "Cache-Control", "value": "max-age=31536000"}
-        ]
-      },
-      {
-        "source": "**/*.@(mp4|webm|ogg)",
-        "headers": [
-          {"key": "Cross-Origin-Resource-Policy", "value": "cross-origin"},
-          {"key": "Content-Type", "value": "video/mp4"}
+          {
+            "key": "Content-Type",
+            "value": "video/mp4"
+          },
+          {
+            "key": "Cross-Origin-Resource-Policy",
+            "value": "cross-origin"
+          }
         ]
       }
     ]

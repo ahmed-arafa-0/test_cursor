@@ -1,3 +1,5 @@
+// COMPLETE REPLACEMENT for lib/cubits/countdown_cubit/countdown_state.dart
+
 part of 'countdown_cubit.dart';
 
 @immutable
@@ -55,6 +57,19 @@ final class CountdownFinished extends CountdownState {
   final String message;
 
   CountdownFinished({required this.message});
+}
+
+// 🎉 NEW CELEBRATION STATE - This is the missing class!
+final class CountdownCelebration extends CountdownState {
+  final String birthdayMessage;
+  final DateTime celebrationStart;
+  final bool isActive;
+
+  CountdownCelebration({
+    required this.birthdayMessage,
+    required this.celebrationStart,
+    this.isActive = true,
+  });
 }
 
 final class CountdownError extends CountdownState {

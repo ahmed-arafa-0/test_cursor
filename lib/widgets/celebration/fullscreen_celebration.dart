@@ -181,10 +181,10 @@ class _FullscreenBirthdayCelebrationState
       '✨',
       '🎊',
       '🎵',
-      '🌸',
+      '🌻',
       '🦋',
       '🍰',
-      '💝',
+      '🤍',
       '🎀',
       '💫',
     ];
@@ -304,12 +304,12 @@ class _FullscreenBirthdayCelebrationState
                       child: Opacity(
                         opacity: (1 - progress) * 0.8 + 0.2,
                         child: Text(
-                          '💖',
+                          '🤍',
                           style: TextStyle(
                             fontSize: particle.size,
                             shadows: [
                               Shadow(
-                                color: Colors.pink.withOpacity(0.5),
+                                color: Colors.white.withOpacity(0.5),
                                 blurRadius: 3,
                                 offset: const Offset(1, 1),
                               ),
@@ -411,16 +411,17 @@ class _FullscreenBirthdayCelebrationState
                       margin: const EdgeInsets.all(32),
                       padding: const EdgeInsets.all(32),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.pink.withOpacity(0.4),
-                            Colors.purple.withOpacity(0.4),
-                            Colors.orange.withOpacity(0.4),
-                            Colors.yellow.withOpacity(0.4),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
+                        color: Colors.black87,
+                        // gradient: LinearGradient(
+                        //   colors: [
+                        //     Colors.pink.withOpacity(0.4),
+                        //     Colors.purple.withOpacity(0.4),
+                        //     Colors.orange.withOpacity(0.4),
+                        //     Colors.yellow.withOpacity(0.4),
+                        //   ],
+                        //   begin: Alignment.topLeft,
+                        //   end: Alignment.bottomRight,
+                        // ),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.6),
@@ -514,44 +515,6 @@ class _FullscreenBirthdayCelebrationState
                                   ],
                                 ),
                                 textAlign: TextAlign.center,
-                              ),
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // 🎊 CELEBRATION STATUS
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.green.withOpacity(0.4),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('🎊', style: TextStyle(fontSize: 20)),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'CELEBRATION MODE ACTIVE',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: screenSize.width < 600
-                                          ? 12
-                                          : 14,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1.2,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text('🎊', style: TextStyle(fontSize: 20)),
-                                ],
                               ),
                             ),
                           ],

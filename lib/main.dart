@@ -494,6 +494,26 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
             ),
           ),
 
+          BlocBuilder<CountdownCubit, CountdownState>(
+            builder: (context, countdownState) {
+              final shouldShowCelebration =
+                  countdownState is CountdownFinished ||
+                  countdownState is CountdownCelebration;
+
+              return BlocBuilder<LanguageCubit, LanguageState>(
+                builder: (context, languageState) {
+                  final currentLanguage = context
+                      .read<LanguageCubit>()
+                      .currentLanguage;
+
+                  return FullscreenBirthdayCelebration(
+                    isActive: shouldShowCelebration,
+                    language: currentLanguage, // 👈 Pass current language
+                  );
+                },
+              );
+            },
+          ),
           // Content
           Positioned.fill(
             child: SafeArea(
@@ -790,26 +810,6 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                 ),
               ),
             ),
-          BlocBuilder<CountdownCubit, CountdownState>(
-            builder: (context, countdownState) {
-              final shouldShowCelebration =
-                  countdownState is CountdownFinished ||
-                  countdownState is CountdownCelebration;
-
-              return BlocBuilder<LanguageCubit, LanguageState>(
-                builder: (context, languageState) {
-                  final currentLanguage = context
-                      .read<LanguageCubit>()
-                      .currentLanguage;
-
-                  return FullscreenBirthdayCelebration(
-                    isActive: shouldShowCelebration,
-                    language: currentLanguage, // 👈 Pass current language
-                  );
-                },
-              );
-            },
-          ),
         ],
       ),
     );

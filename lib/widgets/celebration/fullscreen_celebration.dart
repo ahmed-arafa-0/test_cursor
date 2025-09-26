@@ -252,7 +252,7 @@ class _FullscreenBirthdayCelebrationState
 
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withOpacity(0.1), // Slight dark overlay
+        color: Colors.transparent, // Slight dark overlay
         child: Stack(
           children: [
             // 🎊 FULLSCREEN CONFETTI LAYER

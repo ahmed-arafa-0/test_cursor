@@ -13,26 +13,32 @@ class CountdownCubit extends Cubit<CountdownState> {
 
   late DateTime _targetDate;
   Timer? _timer;
-
+  final DateTime testDate = DateTime.now().add(Duration(seconds: 15));
   DateTime get targetDate => _targetDate;
 
   void _setTargetDate(DateTime? targetDate) {
-    if (targetDate != null) {
-      // Set target date to midnight Cairo time on the birthday
-      _targetDate = DateTime(
-        targetDate.year,
-        targetDate.month,
-        targetDate.day,
-        0,
-        0,
-        0,
-      );
-    } else {
-      // Default: Veuolla's birthday September 26, 2025 at midnight Cairo time
-      _targetDate = DateTime(2025, 9, 26, 0, 0, 0);
-    }
+    // if (targetDate != null) {
+    //   // Set target date to midnight Cairo time on the birthday
+    //   _targetDate = DateTime(
+    //     targetDate.year,
+    //     targetDate.month,
+    //     targetDate.day,
+    //     0,
+    //     0,
+    //     0,
+    //   );
+    // } else {
+    //   // Default: Veuolla's birthday September 26, 2025 at midnight Cairo time
+    //   _targetDate = DateTime(2025, 9, 26, 0, 0, 0);
+    // }
 
-    log('Target date set to: $_targetDate (Cairo time)');
+    // log('Target date set to: $_targetDate (Cairo time)');
+
+    // FOR IMMEDIATE TESTING - SET TO 10 SECONDS FROM NOW:
+    // final now = DateTime.now();
+    _targetDate = DateTime.now().add(Duration(seconds: 20));
+
+    log('Target date set to: $_targetDate (10 seconds from now)');
   }
 
   /// Get current time in Cairo timezone - FIXED: Simple +4 hours (was +2, now +4 to show 2 hours more)
@@ -72,7 +78,8 @@ class CountdownCubit extends Cubit<CountdownState> {
       final nowCairo = _getCairoTime();
 
       // Create target date in Cairo timezone (September 26, 2025 at midnight Cairo time)
-      final targetCairo = DateTime(2025, 9, 26, 0, 0, 0);
+      final targetCairo = testDate;
+      // final targetCairo = DateTime(2025, 9, 26, 0, 0, 0);
 
       // Calculate difference
       final difference = targetCairo.difference(nowCairo);

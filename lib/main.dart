@@ -29,7 +29,7 @@ class VeoullaApp extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) =>
-              CountdownCubit(targetDate: DateTime(2025, 9, 26)),
+              CountdownCubit(targetDate: DateTime(2025, 9, 27)),
         ),
         BlocProvider(create: (context) => LanguageCubit()),
         BlocProvider(create: (context) => ContentCubit()..initialize()),
@@ -505,11 +505,14 @@ class _CountdownHomePageState extends State<CountdownHomePage> {
                   final currentLanguage = context
                       .read<LanguageCubit>()
                       .currentLanguage;
-
-                  return FullscreenBirthdayCelebration(
-                    isActive: shouldShowCelebration,
-                    language: currentLanguage, // 👈 Pass current language
-                  );
+                  if (shouldShowCelebration) {
+                    return FullscreenBirthdayCelebration(
+                      isActive: shouldShowCelebration,
+                      language: currentLanguage, // 👈 Pass current language
+                    );
+                  } else {
+                    return Container();
+                  }
                 },
               );
             },
